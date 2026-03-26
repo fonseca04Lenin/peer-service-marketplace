@@ -7,7 +7,7 @@ function SearchPage() {
 
     // CHANGE THE FETCH ADDRESS TO WHAT IS NEEDED
     useEffect(() => {
-        fetch("http://127.0.0.1:8000/services/")
+        fetch("http://127.0.0.1:8000/api/services/")
         .then(res => res.json())
         .then(data => setServices(data));
     }, []);
@@ -27,8 +27,10 @@ function SearchPage() {
 
       {filteredServices.map(service => (
         <div key={service.id} style={{ marginBottom: "16px" }}>
-          <h3>{service.title}</h3>
-          <p>{service.description}</p>
+            <a href={`/services/${service.id}`}>
+                <h3>{service.title}</h3>
+            </a>
+            <p>{service.description}</p>
         </div>
       ))}
       {filteredServices.length === 0 && <p>No services found</p>}
