@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
 import MainPage from './pages/MainPage';
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [page, setPage] = useState('landing');
 
-  if (loggedIn) {
-    return <MainPage />;
-  }
+  if (page === 'main')    return <MainPage />;
+  if (page === 'login')   return <LoginPage  onLogin={() => setPage('main')} onGoToSignUp={() => setPage('signup')} onBack={() => setPage('landing')} />;
+  if (page === 'signup')  return <SignUpPage onSignUp={() => setPage('main')} onGoToLogin={() => setPage('login')}  onBack={() => setPage('landing')} />;
 
-  return <LoginPage onLogin={() => setLoggedIn(true)} />;
+  return <LandingPage onSignIn={() => setPage('login')} onGetStarted={() => setPage('signup')} />;
 }
 
 export default App;

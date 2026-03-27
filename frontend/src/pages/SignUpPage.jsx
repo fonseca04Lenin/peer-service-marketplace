@@ -1,13 +1,15 @@
 import { useState } from 'react';
 
-function LoginPage({ onLogin, onGoToSignUp, onBack }) {
+function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('hire');
 
   return (
     <div style={styles.page}>
 
-      {/* Navbar */}
+      {/* Navigationn bar */}
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
@@ -16,10 +18,19 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
         </span>
       </nav>
 
-      {/* Centered card over Minecraft background */}
+      {/*Minecraft background */}
       <div style={styles.center}>
         <div style={styles.card}>
-          <h2 style={styles.title}>Sign in to your account</h2>
+          <h2 style={styles.title}>Create your account</h2>
+
+          <label style={styles.label}>Full Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            style={styles.input}
+          />
 
           <label style={styles.label}>Email</label>
           <input
@@ -39,15 +50,31 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
             style={styles.input}
           />
 
-          <button onClick={onLogin} style={styles.button}>Sign in</button>
+          <label style={styles.label}>I want to...</label>
+          <div style={styles.roleRow}>
+            <button
+              onClick={() => setRole('hire')}
+              style={role === 'hire' ? styles.roleActive : styles.role}
+            >
+              Hire Someone
+            </button>
+            <button
+              onClick={() => setRole('offer')}
+              style={role === 'offer' ? styles.roleActive : styles.role}
+            >
+              Offer a Service
+            </button>
+          </div>
+
+          <button onClick={onSignUp} style={styles.button}>Create account</button>
 
           <div style={styles.divider}>
             <hr style={styles.hr} />
           </div>
 
           <p style={styles.switchText}>
-            New to PeerMarket?{' '}
-            <span onClick={onGoToSignUp} style={styles.link}>Create account</span>
+            Already have an account?{' '}
+            <span onClick={onGoToLogin} style={styles.link}>Sign in</span>
           </p>
         </div>
       </div>
@@ -87,6 +114,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflowY: 'auto',
+    padding: '24px',
   },
   card: {
     background: 'white',
@@ -120,6 +149,35 @@ const styles = {
     color: '#0f0620',
     fontFamily: "'Poppins', sans-serif",
   },
+  roleRow: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '24px',
+  },
+  role: {
+    flex: 1,
+    padding: '11px',
+    background: 'white',
+    color: '#555',
+    border: '1px solid #dde3ea',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '500',
+    fontFamily: "'Poppins', sans-serif",
+  },
+  roleActive: {
+    flex: 1,
+    padding: '11px',
+    background: '#f0eeff',
+    color: 'rgb(83, 58, 253)',
+    border: '1px solid rgb(83, 58, 253)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600',
+    fontFamily: "'Poppins', sans-serif",
+  },
   button: {
     width: '100%',
     padding: '13px',
@@ -131,7 +189,6 @@ const styles = {
     fontSize: '15px',
     fontWeight: '600',
     fontFamily: "'Poppins', sans-serif",
-    marginTop: '4px',
   },
   divider: {
     margin: '24px 0 20px 0',
@@ -153,4 +210,4 @@ const styles = {
   },
 };
 
-export default LoginPage;
+export default SignUpPage;
