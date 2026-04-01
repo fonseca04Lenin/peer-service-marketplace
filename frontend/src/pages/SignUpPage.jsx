@@ -8,8 +8,8 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
 
   return (
     <div style={styles.page}>
+      <div className="mc-bg" />
 
-      {/* Navigationn bar */}
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
@@ -18,7 +18,6 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
         </span>
       </nav>
 
-      {/*Minecraft background */}
       <div style={styles.center}>
         <div style={styles.card}>
           <h2 style={styles.title}>Create your account</h2>
@@ -66,7 +65,7 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
             </button>
           </div>
 
-          <button onClick={onSignUp} style={styles.button}>Create account</button>
+          <button onClick={() => onSignUp(role)} style={styles.button}>Create account</button>
 
           <div style={styles.divider}>
             <hr style={styles.hr} />
@@ -78,7 +77,6 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
           </p>
         </div>
       </div>
-
     </div>
   );
 }
@@ -88,11 +86,9 @@ const styles = {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    backgroundImage: 'url(/minecraft.png)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    fontFamily: "'Poppins', sans-serif",
+    position: 'relative',
     overflow: 'hidden',
+    fontFamily: "'Poppins', sans-serif",
   },
   nav: {
     padding: '0 48px',
@@ -101,6 +97,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
+    position: 'relative',
+    zIndex: 1,
   },
   logo: {
     color: 'white',
@@ -116,10 +114,12 @@ const styles = {
     justifyContent: 'center',
     overflowY: 'auto',
     padding: '24px',
+    position: 'relative',
+    zIndex: 1,
   },
   card: {
     background: 'white',
-    padding: '48px 48px',
+    padding: '48px',
     borderRadius: '10px',
     width: '480px',
     boxShadow: '0 8px 40px rgba(0,0,0,0.25)',

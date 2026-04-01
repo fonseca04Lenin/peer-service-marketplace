@@ -1,4 +1,4 @@
-function LandingPage({ onSignIn, onGetStarted }) {
+function LandingPage({ onSignIn, onGetStarted, onTestDashboard }) {
   return (
     <div style={styles.page}>
 
@@ -12,6 +12,7 @@ function LandingPage({ onSignIn, onGetStarted }) {
         <div style={styles.navRight}>
           <button onClick={onSignIn} style={styles.signInBtn}>Sign in</button>
           <button onClick={onGetStarted} style={styles.getStartedBtn}>Get started →</button>
+          <button onClick={onTestDashboard} style={styles.testBtn}>dashboard</button>
         </div>
       </nav>
 
@@ -35,7 +36,7 @@ function LandingPage({ onSignIn, onGetStarted }) {
 
         {/* Right placeholder */}
         <div style={styles.heroRight}>
-          <p style={styles.placeholder}>an animation will go here or idk yet </p>
+          <button onClick={onTestDashboard} style={styles.skipBtn}>test skip</button>
         </div>
       </div>
 
@@ -82,6 +83,16 @@ const styles = {
     fontSize: '14px',
     cursor: 'pointer',
     fontWeight: '500',
+  },
+  testBtn: {
+    background: 'transparent',
+    color: 'rgba(255,255,255,0.25)',
+    border: '1px dashed rgba(255,255,255,0.15)',
+    borderRadius: '5px',
+    padding: '7px 14px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontWeight: '400',
   },
   getStartedBtn: {
     background: 'rgb(83, 58, 253)',
@@ -168,11 +179,15 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  placeholder: {
+  skipBtn: {
+    background: 'transparent',
+    color: '#3b82f6',
+    border: '1px dashed #3b82f6',
+    borderRadius: '6px',
+    padding: '10px 20px',
     fontSize: '13px',
-    color: '#bbb',
-    fontStyle: 'italic',
-    letterSpacing: '0.3px',
+    cursor: 'pointer',
+    fontFamily: "'Poppins', sans-serif",
   },
 };
 
