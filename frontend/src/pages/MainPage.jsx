@@ -1,9 +1,17 @@
 import { useState } from 'react';
+import SearchPage from './SearchPage';
+import AccountPage from './AccountPage';
 
-const navItems = ['Dashboard', 'My Listings', 'Bookings', 'Messages', 'Reviews', 'Settings'];
+const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
 function MainPage() {
   const [active, setActive] = useState('Dashboard');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [selectedServiceID, setSelectedServiceID] = useState(null);
+
+  const handleLogin = (userData) => {
+    setCurrentUser(userData);
+  };
 
   return (
     <div style={s.page}>
@@ -37,7 +45,17 @@ function MainPage() {
         </div>
       </aside>
 
-      <main style={s.main} />
+      <main style={s.main}>
+        {active === 'Dashboard' && <h1>Dashboard</h1>}
+        {active === 'Profile Overview' && (
+          <AccountPage username={currentUser?.username} onSelectService={setSelectedServiceID}  />
+        )}
+        {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
+        {active === 'Bookings' && <h1>Bookings</h1>}
+        {active === 'Messages' && <h1>Messages</h1>}
+        {active === 'Reviews' && <h1>Reviews</h1>}
+        {active === 'Settings' && <h1>Settings</h1>}
+      </main>
 
     </div>
   );
