@@ -36,7 +36,7 @@ function AccountPage( {username, onSelectService} ) {
         return (
             <div style={s.page}>
                 <h1 style={s.title}>Profile Overview</h1>
-                <p>User Not Logged In</p>
+                <p style={s.noResults}>User Not Logged In</p>
             </div>
         )
     }
@@ -136,6 +136,10 @@ const s = {
     color: "#444",
   },
   noServices: {
+    fontSize: "16px",
+    color: "#666",
+  },
+  noResults: {
     fontSize: "16px",
     color: "#666",
   },

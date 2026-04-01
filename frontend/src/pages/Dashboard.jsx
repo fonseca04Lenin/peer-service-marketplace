@@ -19,7 +19,7 @@ function Dashboard({ onSelectService }) {
         return (
             <div style={s.page}>
                 <h1 style={s.title}>Dashboard</h1>
-                <p style={s.cardDescription}>No Services Found</p>
+                <p style={s.noResults}>No Services Found</p>
             </div>
         )
     }
@@ -92,6 +92,10 @@ const s = {
     fontSize: "14px",
     fontWeight: "600",
     color: "#0f0620",
+  },
+  noResults: {
+    fontSize: "16px",
+    color: "#666",
   },
 };
 

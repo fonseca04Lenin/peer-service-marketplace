@@ -20,7 +20,7 @@ function BookingsPage({ currentUser }) {
         return (
             <div style={s.page}>
                 <h1 style={s.title}>My Bookings</h1>
-                <p>Log in to view your bookings</p>
+                <p style={s.noResults}>Log in to view your bookings</p>
             </div>
         )
     }
@@ -106,6 +106,10 @@ const s = {
     fontSize: "14px",
     fontWeight: "600",
     color: "#0f0620",
+  },
+  noResults: {
+    fontSize: "16px",
+    color: "#666",
   },
 };
 
