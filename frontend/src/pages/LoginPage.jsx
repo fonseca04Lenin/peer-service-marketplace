@@ -6,8 +6,8 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
 
   return (
     <div style={styles.page}>
+      <div className="mc-bg" />
 
-      {/* Navbar */}
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
@@ -16,7 +16,6 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
         </span>
       </nav>
 
-      {/* Centered card over Minecraft background */}
       <div style={styles.center}>
         <div style={styles.card}>
           <h2 style={styles.title}>Sign in to your account</h2>
@@ -51,7 +50,6 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
           </p>
         </div>
       </div>
-
     </div>
   );
 }
@@ -61,11 +59,9 @@ const styles = {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    backgroundImage: 'url(/minecraft.png)',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    fontFamily: "'Poppins', sans-serif",
+    position: 'relative',
     overflow: 'hidden',
+    fontFamily: "'Poppins', sans-serif",
   },
   nav: {
     padding: '0 48px',
@@ -74,6 +70,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
+    position: 'relative',
+    zIndex: 1,
   },
   logo: {
     color: 'white',
@@ -87,10 +85,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+    zIndex: 1,
   },
   card: {
     background: 'white',
-    padding: '48px 48px',
+    padding: '48px',
     borderRadius: '10px',
     width: '480px',
     boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
