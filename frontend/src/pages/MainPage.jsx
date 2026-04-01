@@ -2,6 +2,15 @@ import { useState } from 'react';
 
 const navItems = ['Dashboard', 'My Listings', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 function MainPage() {
   const [active, setActive] = useState('Dashboard');
 
@@ -29,10 +38,10 @@ function MainPage() {
         </div>
 
         <div style={s.sideFooter}>
-          <div style={s.userAvatar}>JD</div>
+          <div style={s.userAvatar}>{getInitials(user.name)}</div>
           <div>
-            <p style={s.userName}>Lenin Fonseca</p>
-            <p style={s.userRole}>Provider</p>
+            <p style={s.userName}>{user.name}</p>
+            <p style={s.userRole}>{user.role}</p>
           </div>
         </div>
       </aside>
