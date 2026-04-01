@@ -35,7 +35,8 @@ function AccountPage( {username, onSelectService} ) {
     if (user == null) {
         return (
             <div style={s.page}>
-                <p style={s.title}>Not Signed in...</p>
+                <h1 style={s.title}>Profile Overview</h1>
+                <p>User Not Logged In</p>
             </div>
         )
     }

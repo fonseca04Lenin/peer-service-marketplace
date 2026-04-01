@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import SearchPage from './SearchPage';
 import AccountPage from './AccountPage';
+import Dashboard from './Dashboard';
+import BookingsPage from './BookingsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
@@ -46,12 +48,12 @@ function MainPage() {
       </aside>
 
       <main style={s.main}>
-        {active === 'Dashboard' && <h1>Dashboard</h1>}
+        {active === 'Dashboard' && <Dashboard onSelectService={setSelectedServiceID}/>}
         {active === 'Profile Overview' && (
           <AccountPage username={currentUser?.username} onSelectService={setSelectedServiceID}  />
         )}
         {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
-        {active === 'Bookings' && <h1>Bookings</h1>}
+        {active === 'Bookings' && <BookingsPage username={currentUser?.username}/>}
         {active === 'Messages' && <h1>Messages</h1>}
         {active === 'Reviews' && <h1>Reviews</h1>}
         {active === 'Settings' && <h1>Settings</h1>}
