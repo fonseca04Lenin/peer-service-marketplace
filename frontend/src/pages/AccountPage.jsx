@@ -7,6 +7,9 @@ function AccountPage( {username, onSelectService} ) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!username) {
+            return;
+        }
         setLoading(true);
         //USERNAME
         fetch(`http://127.0.0.1:8000/api/users/${username}/`,
@@ -28,17 +31,17 @@ function AccountPage( {username, onSelectService} ) {
 
     }, [username] );
 
-    if (loading) {
-        return <p>Loading..</p>
-    }
-
-    if (user == null) {
+    if (!username) {
         return (
             <div style={s.page}>
                 <h1 style={s.title}>Profile Overview</h1>
                 <p style={s.noResults}>User Not Logged In</p>
             </div>
         )
+    }
+
+    if (loading) {
+        return <p>Loading..</p>
     }
 
 

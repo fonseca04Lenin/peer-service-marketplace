@@ -3,6 +3,8 @@ import SearchPage from './SearchPage';
 import AccountPage from './AccountPage';
 import Dashboard from './Dashboard';
 import BookingsPage from './BookingsPage';
+import MessagesPage from './MessagesPage';
+import ReviewsPage from './ReviewsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
@@ -54,8 +56,8 @@ function MainPage() {
         )}
         {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
         {active === 'Bookings' && <BookingsPage username={currentUser?.username}/>}
-        {active === 'Messages' && <h1>Messages</h1>}
-        {active === 'Reviews' && <h1>Reviews</h1>}
+        {active === 'Messages' && <MessagesPage username={currentUser?.username}/>}
+        {active === 'Reviews' && <ReviewsPage username={currentUser?.username}/>}
         {active === 'Settings' && <h1>Settings</h1>}
       </main>
 

@@ -3,15 +3,21 @@ import { useState, useEffect } from "react";
 function SearchPage({onSelectService}) {
     const [services, setServices] = useState([]);
     const [query, setQuery] = useState("");
+    const [loading, setLoading] = useState(true);
 
 
     // CHANGE THE FETCH ADDRESS TO WHAT IS NEEDED
     useEffect(() => {
-        fetch("http://127.0.0.1:8000/api/services/")
-        .then(res => res.json())
-        .then(data => setServices(data));
+      setLoading(true);
+      fetch("http://127.0.0.1:8000/api/services/")
+      .then(res => res.json())
+      .then(data => setServices(data))
+      .finally(() => setLoading(false));
     }, []);
 
+    if (loading){
+      return <p style={s.noResults}>Loading services...</p>;
+    }
     const filteredServices = services.filter(service => service.title?.toLowerCase().includes(query.toLowerCase()));
 
     return (

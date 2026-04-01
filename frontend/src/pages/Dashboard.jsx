@@ -30,7 +30,7 @@ function Dashboard({ onSelectService }) {
             <h1 style={s.title}>Dashboard</h1>
             <div style={s.results}>
                 {services.map(service => (
-                    <div key={services.id} style={s.card} onClick={() => onSelectService(service.id)}>
+                    <div key={service.id} style={s.card} onClick={() => onSelectService(service.id)}>
                         <h3 style={s.cardTitle}>{service.title}</h3>
                         <p style={s.cardDescription}>{service.description}</p>
                         <p style={s.cardCategory}>Category: {service.category}</p>

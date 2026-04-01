@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-function BookingsPage({ currentUser }) {
-    const [bookings, setBookings] = useState([]);
+function ReviewsPage({ currentUser }) {
+    const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -9,46 +9,45 @@ function BookingsPage({ currentUser }) {
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/api/bookings/?requester=${currentUser.username}`, 
-            { credentials: "include" })
+        fetch(`http://127.0.0.1:8000/api/reviews/?reviewer=${currentUser.username}`, 
+            {credentials: "include"})
             .then(res => res.json())
-            .then(data => setBookings(data))
-            .finally(() => setLoading(false))
+            .then(data => setReviews(data))
+            .finally(() => setLoading(false));
     }, [currentUser]);
 
     if (!currentUser) {
         return (
             <div style={s.page}>
-                <h1 style={s.title}>My Bookings</h1>
-                <p style={s.noResults}>Log in to view your bookings</p>
+                <h1 style={s.title}>My Reviews</h1>
+                <p style={s.noResults}>Log in to view your reviews</p>
             </div>
         )
     }
 
     if (loading) {
-        return <p style={s.loading}>Loading Bookings...</p>
+        return <p style={s.loading}>Loading Reviews...</p>
     }
 
-    if (bookings.length === 0) {
+    if (reviews.length === 0) {
         return (
             <div style={s.page}>
-                <h1 style={s.title}>My Bookings</h1>
-                <p style={s.cardDescription}>No Bookings Services</p>
+                <h1 style={s.title}>My Reviews</h1>
+                <p style={s.noResults}>No Reviews</p>
             </div>
         )
     }
 
     return (
         <div style={s.page}>
-            <h1 style={s.title}>My Bookings</h1>
+            <h1 style={s.title}>My Reviews</h1>
             <div style={s.results}>
-                {bookings.map(booking => (
-                    <div key={booking.id} style={s.card}>
-                        <h3 style={s.cardTitle}>{booking.service.title}</h3>
-                        <p style={s.cardDescription}>Provider: {booking.service.provider.username}</p>
-                        <p style={s.cardCategory}>Scheduled: {new Date(booking.scheduled_at).toLocaleString()}</p>
-                        <p style={s.cardPrice}>Status: {booking.status}</p>
-                        {booking.notes && <p style={s.cardDescription}>Notes: {booking.notes}</p>}
+                {reviews.map(review => (
+                    <div key={review.id} style={s.card}>
+                        <h3 style={s.cardTitle}>From: {review.booking.service.provider.username}</h3>
+                        <p style={s.cardRating}>Rating: {review.rating}</p>
+                        {review.comment && <p style={s.cardDescription}>{review.comment}</p>}
+                        <p style={s.cardDate}>{new Date(review.created_at).toLocaleDateString()}</p>
                     </div>
                     ))}
             </div>
@@ -84,7 +83,7 @@ const s = {
     borderRadius: "12px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     transition: "transform 0.2s",
-    cursor: "pointer",
+    cursor: "default",
   },
   cardTitle: {
     margin: "0 0 12px 0",
@@ -92,20 +91,20 @@ const s = {
     fontWeight: "600",
     color: "#0f0620",
   },
+  cardRating: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#0f0620",
+    marginBottom: "8px",
+  },
   cardDescription: {
     margin: "0 0 8px 0",
     fontSize: "14px",
     color: "#444",
   },
-  cardCategory: {
-    fontSize: "13px",
+  cardDate: {
+    fontSize: "12px",
     color: "#888",
-    marginBottom: "4px",
-  },
-  cardPrice: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#0f0620",
   },
   noResults: {
     fontSize: "16px",
@@ -113,4 +112,4 @@ const s = {
   },
 };
 
-export default BookingsPage;
+export default ReviewsPage;
