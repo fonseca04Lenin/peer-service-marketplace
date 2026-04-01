@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 
-function AccountPage( {username} ) {
+function AccountPage( {username, onSelectService} ) {
     const [services, setServices] = useState([]);
     const [user, setUser] = useState(null);
 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setLoading(true);
         //USERNAME
         fetch(`http://127.0.0.1:8000/api/users/${username}/`,
             { credentials: "include" }
         )
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("User not found");
+            return res.json();
+        })
         .then(data => setUser(data));
 
         //SERVICES
@@ -28,9 +32,18 @@ function AccountPage( {username} ) {
         return <p>Loading..</p>
     }
 
+    if (user == null) {
+        return (
+            <div style={s.page}>
+                <p style={s.title}>Not Signed in...</p>
+            </div>
+        )
+    }
+
+
     return (
-        <div>
-            <h1>{user.username}</h1>
+        <div style={s.page}>
+            <h1 style={s.title}>{user.username}</h1>
             <div style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}>
                 {user.profile_picture && (
                     <img
@@ -52,28 +65,21 @@ function AccountPage( {username} ) {
                 </div>
             </div>
 
-            <div style={{
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                padding: "16px",
-                marginBottom: "24px",
-                backgroundColor: "#f9f9f9",
-                textAlign: "center"
-                }}>
+            <div style={s.walletCard}>
                 <h2>Wallet Balance</h2>
-                <p>${user.wallet_balance.toFixed(2)}</p>
+                <p>${user.wallet_balance?.toFixed(2) ?? "0.00"}</p>
             </div>
             <h2>Services List</h2>
             {services.length === 0 ? (
-                <p>No services listed yet.</p>
+                <p style={s.noServices}>No services listed yet.</p>
             ) : (
-            <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+            <ul style={s.servicesGrid}>
                 {services.map(service => (
                     <li key={service.id} style={{ marginBottom: "16px" }}>
-                        <a href={`/services/${service.id}`}>
-                            <h3>{service.title}</h3>
-                        </a>
-                        <p>{service.description}</p>
+                        <div style={s.serviceCard} onClick={() => onSelectService(service.id)}>
+                            <h3 style={s.cardTitle}>{service.title}</h3>
+                            <p style={s.cardDescription}>{service.description}</p>
+                        </div>
                     </li>
                 ))}
             </ul>
@@ -82,5 +88,56 @@ function AccountPage( {username} ) {
     );
 
 }
+
+const s = {
+  page: {
+    padding: "32px",
+    fontFamily: "'Poppins', sans-serif",
+    background: "#f7f6ff",
+    minHeight: "100%",
+  },
+  title: {
+    fontSize: "28px",
+    fontWeight: "700",
+    marginBottom: "24px",
+    color: "#0f0620",
+  },
+  walletCard: {
+    background: "white",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+    marginBottom: "24px",
+    textAlign: "center",
+  },
+  servicesGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "20px",
+  },
+  serviceCard: {
+    background: "white",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    transition: "transform 0.2s",
+    cursor: "pointer",
+  },
+  cardTitle: {
+    margin: "0 0 12px 0",
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#0f0620",
+  },
+  cardDescription: {
+    margin: "0 0 8px 0",
+    fontSize: "14px",
+    color: "#444",
+  },
+  noServices: {
+    fontSize: "16px",
+    color: "#666",
+  },
+};
 
 export default AccountPage;

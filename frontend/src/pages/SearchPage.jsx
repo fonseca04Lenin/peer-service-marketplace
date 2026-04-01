@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-function SearchPage() {
+function SearchPage({onSelectService}) {
     const [services, setServices] = useState([]);
     const [query, setQuery] = useState("");
 
@@ -15,27 +15,83 @@ function SearchPage() {
     const filteredServices = services.filter(service => service.title?.toLowerCase().includes(query.toLowerCase()));
 
     return (
-    <div>
-      <h1>Search Services</h1>
+    <div style={s.page}>
+      <h1 style={s.title}>Search Services</h1>
 
       <input
         type="text"
         placeholder="Search Services"
-        style={{ width: '100%', padding: '8px', marginBottom: '16px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
+        value={query}
         onChange={(i) => setQuery(i.target.value)}
+        style={s.input}
       />
-
-      {filteredServices.map(service => (
-        <div key={service.id} style={{ marginBottom: "16px" }}>
-            <a href={`/services/${service.id}`}>
-                <h3>{service.title}</h3>
-            </a>
-            <p>{service.description}</p>
-        </div>
-      ))}
-      {filteredServices.length === 0 && <p>No services found</p>}
+      <div style={s.results}>
+        {filteredServices.map(service => (
+          <div key={service.id} style={s.card} onClick={() => onSelectService(service.id)}>
+              <h3 style={s.cardTitle}>{service.title}</h3>
+              <p style={s.cardDescription}>{service.description}</p>
+          </div>
+        ))}
+        {filteredServices.length === 0 && <p style={s.noResults}>No services found</p>}
+      </div>
     </div>
   );
 }
+
+const s = {
+  page: {
+    padding: "32px",
+    fontFamily: "'Poppins', sans-serif",
+    background: "#f7f6ff",
+    minHeight: "100%",
+  },
+  title: {
+    fontSize: "28px",
+    fontWeight: "700",
+    marginBottom: "24px",
+    color: "#0f0620",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 16px",
+    fontSize: "14px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    marginBottom: "24px",
+    outline: "none",
+  },
+  results: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "20px",
+  },
+  card: {
+    background: "white",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+    transition: "transform 0.2s",
+    cursor: "pointer",
+  },
+  cardTitle: {
+    margin: "0 0 12px 0",
+    fontSize: "18px",
+    fontWeight: "600",
+    color: "#0f0620",
+  },
+  cardDescription: {
+    margin: "0 0 8px 0",
+    fontSize: "14px",
+    color: "#444",
+  },
+  cardLink: {
+    textDecoration: "none",
+    color: "inherit",
+  },
+  noResults: {
+    fontSize: "16px",
+    color: "#666",
+  },
+};
 
 export default SearchPage;
