@@ -8,14 +8,20 @@ import ReviewsPage from './ReviewsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
-function MainPage() {
-  const [active, setActive] = useState('Dashboard');
-  const [currentUser, setCurrentUser] = useState(null);
+function MainPage({ currentUser, onLogout }) {
+  const [active, setActive]               = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
 
-  const handleLogin = (userData) => {
-    setCurrentUser(userData);
-  };
+  const displayName = currentUser
+    ? (currentUser.first_name || currentUser.username)
+    : 'Guest';
+  const initials = displayName
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+  const roleLabel = currentUser?.role === 'provider' ? 'Provider' : 'Requester';
 
   return (
     <div style={s.page}>
@@ -39,25 +45,28 @@ function MainPage() {
             ))}
           </nav>
         </div>
-
+#user fields
         <div style={s.sideFooter}>
-          <div style={s.userAvatar}>JD</div>
-          <div>
-            <p style={s.userName}>Lenin Fonseca</p>
-            <p style={s.userRole}>Provider</p>
+          <div style={s.userAvatar}>{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={s.userName}>{displayName}</p>
+            <p style={s.userRole}>{roleLabel}</p>
           </div>
+          {onLogout && (
+            <span onClick={onLogout} style={s.logoutBtn} title="Sign out">&#x2192;</span>
+          )}
         </div>
       </aside>
 
       <main style={s.main}>
-        {active === 'Dashboard' && <Dashboard onSelectService={setSelectedServiceID}/>}
+        {active === 'Dashboard' && <Dashboard onSelectService={setSelectedServiceID} onNavigate={setActive} currentUser={currentUser} />}
         {active === 'Profile Overview' && (
-          <AccountPage username={currentUser?.username} onSelectService={setSelectedServiceID}  />
+          <AccountPage currentUser={currentUser} onSelectService={setSelectedServiceID} />
         )}
         {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
-        {active === 'Bookings' && <BookingsPage username={currentUser?.username}/>}
-        {active === 'Messages' && <MessagesPage username={currentUser?.username}/>}
-        {active === 'Reviews' && <ReviewsPage username={currentUser?.username}/>}
+        {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
+        {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
+        {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
         {active === 'Settings' && <h1>Settings</h1>}
       </main>
 
@@ -138,9 +147,17 @@ const s = {
     color: 'rgba(255,255,255,0.35)',
     margin: 0,
   },
+  logoutBtn: {
+    color: 'rgba(255,255,255,0.25)',
+    fontSize: '16px',
+    cursor: 'pointer',
+    flexShrink: 0,
+    lineHeight: 1,
+  },
   main: {
     flex: 1,
     background: '#f7f6ff',
+    overflowY: 'auto',
   },
 };
 

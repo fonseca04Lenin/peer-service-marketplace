@@ -1,37 +1,26 @@
 import { useState, useEffect } from "react";
+import { getToken } from "../api";
 
-function AccountPage( {username, onSelectService} ) {
+function AccountPage({ currentUser, onSelectService }) {
     const [services, setServices] = useState([]);
-    const [user, setUser] = useState(null);
-
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(currentUser);
+    const [loading, setLoading] = useState(!currentUser);
 
     useEffect(() => {
-        if (!username) {
-            return;
-        }
-        setLoading(true);
-        //USERNAME
-        fetch(`http://127.0.0.1:8000/api/users/${username}/`,
-            { credentials: "include" }
-        )
-        .then(res => {
-            if (!res.ok) throw new Error("User not found");
-            return res.json();
-        })
-        .then(data => setUser(data));
+        const token = getToken();
+        if (!token) { setLoading(false); return; }
 
-        //SERVICES
-        fetch(`http://127.0.0.1:8000/api/users/${username}/services/`,
-            { credentials: "include" }
-        )
-        .then(res => res.json())
-        .then(data => setServices(data))
+        // Refresh user data from /me/ in background
+        fetch("http://127.0.0.1:8000/api/users/me/", {
+            headers: { Authorization: `Token ${token}` },
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { if (data) setUser(data); })
         .finally(() => setLoading(false));
 
-    }, [username] );
+    }, []);
 
-    if (!username) {
+    if (!currentUser) {
         return (
             <div style={s.page}>
                 <h1 style={s.title}>Profile Overview</h1>
@@ -43,7 +32,6 @@ function AccountPage( {username, onSelectService} ) {
     if (loading) {
         return <p>Loading..</p>
     }
-
 
     return (
         <div style={s.page}>
@@ -64,15 +52,16 @@ function AccountPage( {username, onSelectService} ) {
                         <div>
                             <h3>Bio</h3>
                             <p>{user.bio}</p>
-                        </div> 
+                        </div>
                     )}
                 </div>
             </div>
 
             <div style={s.walletCard}>
                 <h2>Wallet Balance</h2>
-                <p>${user.wallet_balance?.toFixed(2) ?? "0.00"}</p>
+                <p>${parseFloat(user.wallet_balance || 0).toFixed(2)}</p>
             </div>
+
             <h2>Services List</h2>
             {services.length === 0 ? (
                 <p style={s.noServices}>No services listed yet.</p>
@@ -90,7 +79,6 @@ function AccountPage( {username, onSelectService} ) {
             )}
         </div>
     );
-
 }
 
 const s = {

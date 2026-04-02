@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
 
+import { getToken } from '../api';
+
 function BookingsPage({ currentUser }) {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!currentUser) {
+            setLoading(false);
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/api/bookings/?requester=${currentUser.username}`, 
-            { credentials: "include" })
+        const token = getToken();
+        fetch(`http://127.0.0.1:8000/api/bookings/?requester=${currentUser.username}`,
+            { headers: token ? { Authorization: `Token ${token}` } : {} })
             .then(res => res.json())
             .then(data => setBookings(data))
             .finally(() => setLoading(false))
