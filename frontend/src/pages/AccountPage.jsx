@@ -11,7 +11,7 @@ function AccountPage({ currentUser, onSelectService }) {
         if (!token) { setLoading(false); return; }
 
         // Refresh user data from /me/ in background
-        fetch("http://127.0.0.1:8000/api/users/me/", {
+        fetch("/api/users/me/", {
             headers: { Authorization: `Token ${token}` },
         })
         .then(res => res.ok ? res.json() : null)
@@ -39,7 +39,7 @@ function AccountPage({ currentUser, onSelectService }) {
             <div style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}>
                 {user.profile_picture && (
                     <img
-                        src={`http://127.0.0.1:8000${user.profile_picture}`}
+                        src={user.profile_picture}
                         alt={`${user.username}'s Profile`}
                         style={{ width: "100px", height: "100px", borderRadius: "50%", marginRight: "16px" }}
                         />

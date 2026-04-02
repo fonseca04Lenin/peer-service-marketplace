@@ -9,7 +9,7 @@ function MessagesPage({ currentUser }) {
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/api/messages/?receiver=${currentUser.username}`,
+        fetch(`/api/messages/?receiver=${currentUser.username}`,
              { credentials: "include" })
              .then(res => res.json())
              .then(data => setMessages(data))

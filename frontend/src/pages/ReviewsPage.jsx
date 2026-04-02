@@ -9,7 +9,7 @@ function ReviewsPage({ currentUser }) {
             return;
         }
 
-        fetch(`http://127.0.0.1:8000/api/reviews/?reviewer=${currentUser.username}`, 
+        fetch(`/api/reviews/?reviewer=${currentUser.username}`,
             {credentials: "include"})
             .then(res => res.json())
             .then(data => setReviews(data))

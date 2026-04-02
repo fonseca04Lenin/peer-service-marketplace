@@ -23,7 +23,7 @@ function SearchPage({ onSelectService }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch("http://127.0.0.1:8000/api/services/")
+    fetch("/api/services/")
       .then(res => res.json())
       .then(data => setServices(data))
       .finally(() => setLoading(false));

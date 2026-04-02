@@ -13,7 +13,7 @@ function BookingsPage({ currentUser }) {
         }
 
         const token = getToken();
-        fetch(`http://127.0.0.1:8000/api/bookings/?requester=${currentUser.username}`,
+        fetch(`/api/bookings/?requester=${currentUser.username}`,
             { headers: token ? { Authorization: `Token ${token}` } : {} })
             .then(res => res.json())
             .then(data => setBookings(data))

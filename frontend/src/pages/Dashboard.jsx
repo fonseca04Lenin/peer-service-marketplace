@@ -88,7 +88,7 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
   const stats      = isProvider ? PROVIDER_STATS : REQUESTER_STATS;
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/services/")
+    fetch("/api/services/")
       .then(res => res.json())
       .then(data => setServices(data.slice(0, 4)))
       .catch(() => setServices([]))
