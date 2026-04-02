@@ -56,3 +56,4 @@ Frontend runs on `http://localhost:3000`, backend on `http://localhost:8000`.
 - Django project set up with all six apps scaffolded
 - React app set up with a basic login page and main page
 - CORS configured so the frontend and backend can talk to each other
+- Basic Pages Setup. (Home Page and Login)
