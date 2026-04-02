@@ -5,7 +5,7 @@ function ServicePage( {id} ) {
 
     // CHANGE THE FETCH ADDRESS TO WHAT IS NEEDED
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/api/services/${id}/`)
+        fetch(`/api/services/${id}/`)
         .then(res => res.json())
         .then(data => setService(data));
     }, [id]);

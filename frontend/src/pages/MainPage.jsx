@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import SearchPage from './SearchPage';
 import AccountPage from './AccountPage';
+import Dashboard from './Dashboard';
+import BookingsPage from './BookingsPage';
+import MessagesPage from './MessagesPage';
+import ReviewsPage from './ReviewsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
 
@@ -13,14 +17,20 @@ function getInitials(name) {
     .slice(0, 2);
 }
 
-function MainPage() {
-  const [active, setActive] = useState('Dashboard');
-  const [currentUser, setCurrentUser] = useState(null);
+function MainPage({ currentUser, onLogout }) {
+  const [active, setActive]               = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
 
-  const handleLogin = (userData) => {
-    setCurrentUser(userData);
-  };
+  const displayName = currentUser
+    ? (currentUser.first_name || currentUser.username)
+    : 'Guest';
+  const initials = displayName
+    .split(' ')
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+  const roleLabel = currentUser?.role === 'provider' ? 'Provider' : 'Requester';
 
   return (
     <div style={s.page}>
@@ -44,25 +54,28 @@ function MainPage() {
             ))}
           </nav>
         </div>
-
+#user fields
         <div style={s.sideFooter}>
-          <div style={s.userAvatar}>{getInitials(user.name)}</div>
+          <div style={s.userAvatar}>JD</div>
           <div>
-            <p style={s.userName}>{user.name}</p>
-            <p style={s.userRole}>{user.role}</p>
+            <p style={s.userName}>Lenin Fonseca</p>
+            <p style={s.userRole}>Provider</p>
           </div>
+          {onLogout && (
+            <span onClick={onLogout} style={s.logoutBtn} title="Sign out">&#x2192;</span>
+          )}
         </div>
       </aside>
 
       <main style={s.main}>
-        {active === 'Dashboard' && <h1>Dashboard</h1>}
+        {active === 'Dashboard' && <Dashboard onSelectService={setSelectedServiceID} onNavigate={setActive} currentUser={currentUser} />}
         {active === 'Profile Overview' && (
-          <AccountPage username={currentUser?.username} onSelectService={setSelectedServiceID}  />
+          <AccountPage currentUser={currentUser} onSelectService={setSelectedServiceID} />
         )}
         {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
-        {active === 'Bookings' && <h1>Bookings</h1>}
-        {active === 'Messages' && <h1>Messages</h1>}
-        {active === 'Reviews' && <h1>Reviews</h1>}
+        {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
+        {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
+        {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
         {active === 'Settings' && <h1>Settings</h1>}
       </main>
 
@@ -143,9 +156,17 @@ const s = {
     color: 'rgba(255,255,255,0.35)',
     margin: 0,
   },
+  logoutBtn: {
+    color: 'rgba(255,255,255,0.25)',
+    fontSize: '16px',
+    cursor: 'pointer',
+    flexShrink: 0,
+    lineHeight: 1,
+  },
   main: {
     flex: 1,
     background: '#f7f6ff',
+    overflowY: 'auto',
   },
 };
 

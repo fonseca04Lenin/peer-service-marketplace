@@ -1,8 +1,38 @@
 import { useState } from 'react';
+import { saveToken } from '../api';
 
 function LoginPage({ onLogin, onGoToSignUp, onBack }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit() {
+    setError('');
+    if (!username || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/users/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Login failed.');
+        return;
+      }
+      saveToken(data.token);
+      onLogin(data.token, data.user);
+    } catch {
+      setError('Could not connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={styles.page}>
@@ -20,12 +50,15 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
         <div style={styles.card}>
           <h2 style={styles.title}>Sign in to your account</h2>
 
-          <label style={styles.label}>Email</label>
+          {error && <p style={styles.error}>{error}</p>}
+
+          <label style={styles.label}>Username</label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            placeholder="your_username"
             style={styles.input}
           />
 
@@ -34,11 +67,14 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             placeholder="••••••••"
             style={styles.input}
           />
 
-          <button onClick={onLogin} style={styles.button}>Sign in</button>
+          <button onClick={handleSubmit} disabled={loading} style={styles.button}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
 
           <div style={styles.divider}>
             <hr style={styles.hr} />
@@ -150,6 +186,15 @@ const styles = {
     color: 'rgb(83, 58, 253)',
     cursor: 'pointer',
     fontWeight: '600',
+  },
+  error: {
+    background: '#fef2f2',
+    color: '#b91c1c',
+    border: '1px solid #fecaca',
+    borderRadius: '6px',
+    padding: '10px 14px',
+    fontSize: '13px',
+    marginBottom: '20px',
   },
 };
 

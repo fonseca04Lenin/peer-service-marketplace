@@ -12,6 +12,7 @@ A web platform where people can offer and find local gig-based services. Think t
 - **Database** — SQLite (local dev)
 - **Cloud** — Amazon AWS EC2 (Ubuntu)
 - **Version Control** — GitHub
+- **Project Management** — Trello
 
 ---
 

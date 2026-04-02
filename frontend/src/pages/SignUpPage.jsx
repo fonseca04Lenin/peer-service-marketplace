@@ -1,10 +1,48 @@
 import { useState } from 'react';
+import { saveToken } from '../api';
+
+const ROLE_MAP = { hire: 'requester', offer: 'provider' };
 
 function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('hire');
+  const [role, setRole]         = useState('hire');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  async function handleSubmit() {
+    setError('');
+    if (!username || !email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/users/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          role: ROLE_MAP[role],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const first = Object.values(data)[0];
+        setError(Array.isArray(first) ? first[0] : first);
+        return;
+      }
+      saveToken(data.token);
+      onSignUp(data.token, data.user);
+    } catch {
+      setError('Could not connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={styles.page}>
@@ -22,12 +60,14 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
         <div style={styles.card}>
           <h2 style={styles.title}>Create your account</h2>
 
-          <label style={styles.label}>Full Name</label>
+          {error && <p style={styles.error}>{error}</p>}
+
+          <label style={styles.label}>Username</label>
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="your_username"
             style={styles.input}
           />
 
@@ -65,7 +105,9 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
             </button>
           </div>
 
-          <button onClick={() => onSignUp(role)} style={styles.button}>Create account</button>
+          <button onClick={handleSubmit} disabled={loading} style={styles.button}>
+            {loading ? 'Creating account...' : 'Create account'}
+          </button>
 
           <div style={styles.divider}>
             <hr style={styles.hr} />
@@ -207,6 +249,15 @@ const styles = {
     color: 'rgb(83, 58, 253)',
     cursor: 'pointer',
     fontWeight: '600',
+  },
+  error: {
+    background: '#fef2f2',
+    color: '#b91c1c',
+    border: '1px solid #fecaca',
+    borderRadius: '6px',
+    padding: '10px 14px',
+    fontSize: '13px',
+    marginBottom: '20px',
   },
 };
 
