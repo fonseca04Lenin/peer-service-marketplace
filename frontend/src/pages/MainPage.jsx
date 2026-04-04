@@ -6,18 +6,9 @@ import BookingsPage from './BookingsPage';
 import MessagesPage from './MessagesPage';
 import ReviewsPage from './ReviewsPage';
 
-const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings'];
+const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings', 'Offer Services'];
 
-function getInitials(name) {
-  return name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function MainPage({ currentUser, onLogout }) {
+function MainPage({ currentUser, onLogout, onStartOnboarding }) {
   const [active, setActive]               = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
 
@@ -30,7 +21,6 @@ function MainPage({ currentUser, onLogout }) {
     .join('')
     .toUpperCase()
     .slice(0, 2);
-  const roleLabel = currentUser?.role === 'provider' ? 'Provider' : 'Requester';
 
   return (
     <div style={s.page}>
@@ -46,20 +36,23 @@ function MainPage({ currentUser, onLogout }) {
             {navItems.map(item => (
               <div
                 key={item}
-                onClick={() => setActive(item)}
-                style={{ ...s.navItem, ...(active === item ? s.navItemOn : {}) }}
+                onClick={() => item === 'Offer Services' ? onStartOnboarding?.() : setActive(item)}
+                style={{
+                  ...s.navItem,
+                  ...(active === item ? s.navItemOn : {}),
+                  ...(item === 'Offer Services' ? s.navItemOffer : {}),
+                }}
               >
                 {item}
               </div>
             ))}
           </nav>
         </div>
-#user fields
+
         <div style={s.sideFooter}>
-          <div style={s.userAvatar}>JD</div>
-          <div>
-            <p style={s.userName}>Lenin Fonseca</p>
-            <p style={s.userRole}>Provider</p>
+          <div style={s.userAvatar}>{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={s.userName}>{displayName}</p>
           </div>
           {onLogout && (
             <span onClick={onLogout} style={s.logoutBtn} title="Sign out">&#x2192;</span>
@@ -124,6 +117,13 @@ const s = {
     fontWeight: '500',
     borderLeft: '2px solid rgb(167, 139, 250)',
     background: 'rgba(255,255,255,0.04)',
+  },
+  navItemOffer: {
+    color: 'rgb(167, 139, 250)',
+    fontWeight: '500',
+    marginTop: '8px',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
+    paddingTop: '16px',
   },
   sideFooter: {
     display: 'flex',

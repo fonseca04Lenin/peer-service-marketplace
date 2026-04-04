@@ -20,7 +20,7 @@ function App() {
   function handleSignUp(tok, userData) {
     setToken(tok);
     setUser(userData);
-    setPage(userData.role === 'provider' ? 'provider-onboarding' : 'main');
+    setPage('main');
   }
 
   function handleLogout() {
@@ -30,12 +30,12 @@ function App() {
     setPage('landing');
   }
 
-  if (page === 'main')                return <MainPage currentUser={user} onLogout={handleLogout} />;
-  if (page === 'provider-onboarding') return <ProviderOnboarding onFinish={() => setPage('main')} onBack={() => setPage('signup')} />;
+  if (page === 'provider-onboarding') return <ProviderOnboarding onFinish={() => setPage('main')} onBack={() => setPage('main')} />;
+  if (page === 'main')                return <MainPage currentUser={user} onLogout={handleLogout} onStartOnboarding={() => setPage('provider-onboarding')} />;
   if (page === 'login')               return <LoginPage onLogin={handleLogin} onGoToSignUp={() => setPage('signup')} onBack={() => setPage('landing')} />;
   if (page === 'signup')              return <SignUpPage onSignUp={handleSignUp} onGoToLogin={() => setPage('login')} onBack={() => setPage('landing')} />;
 
-  return <LandingPage onSignIn={() => setPage('login')} onGetStarted={() => setPage('signup')} onTestDashboard={() => setPage('main')} />;
+  return <LandingPage onSignIn={() => setPage('login')} onGetStarted={() => setPage('signup')} />;
 }
 
 export default App;

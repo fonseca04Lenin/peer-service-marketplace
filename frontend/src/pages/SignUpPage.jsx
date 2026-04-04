@@ -5,8 +5,8 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
   async function handleSubmit() {
     setError('');
@@ -89,7 +89,7 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
             style={styles.input}
           />
 
-          <button onClick={handleSubmit} style={styles.button} disabled={loading}>
+          <button onClick={handleSubmit} disabled={loading} style={styles.button}>
             {loading ? 'Creating account...' : 'Create account'}
           </button>
 
