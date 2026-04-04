@@ -3,18 +3,21 @@ import { saveToken } from '../api';
 
 function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
   const [username, setUsername] = useState('');
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
 
   async function handleSubmit() {
     setError('');
+
     if (!username || !email || !password) {
       setError('Please fill in all fields.');
       return;
     }
+
     setLoading(true);
+
     try {
       const res = await fetch('/api/users/register/', {
         method: 'POST',
@@ -25,12 +28,15 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
           password,
         }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         const first = Object.values(data)[0];
         setError(Array.isArray(first) ? first[0] : first);
         return;
       }
+
       saveToken(data.token);
       onSignUp(data.token, data.user);
     } catch {
@@ -56,11 +62,10 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
         <div style={styles.card}>
           <h2 style={styles.title}>Create your account</h2>
 
-          {error && <p style={styles.error}>{error}</p>}
+          {error && <div style={styles.error}>{error}</div>}
 
           <label style={styles.label}>Username</label>
           <input
-            type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="your_username"
@@ -69,7 +74,6 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
 
           <label style={styles.label}>Email</label>
           <input
-            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
@@ -95,7 +99,9 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
 
           <p style={styles.switchText}>
             Already have an account?{' '}
-            <span onClick={onGoToLogin} style={styles.link}>Sign in</span>
+            <span style={styles.link} onClick={onGoToLogin}>
+              Sign in
+            </span>
           </p>
         </div>
       </div>

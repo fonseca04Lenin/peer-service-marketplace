@@ -1,0 +1,16 @@
+# Node
+node_modules/
+
+# Mac
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+.env
+
+# Vite
+dist/
+*.vite/
