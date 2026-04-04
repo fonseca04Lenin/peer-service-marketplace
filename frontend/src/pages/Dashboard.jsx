@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 
-// ── Mock data (swap for real API calls when backend is ready) ─────────────────
-const MOCK_USER = { name: "Lenin Fonseca", initials: "LF", role: "provider" };
+const MOCK_USER = { name: "Lenin Fonseca", initials: "LF" };
 
 const MOCK_BOOKINGS = [
   { id: 1, service: "Logo Design",   person: "Sarah K.", date: "Apr 3, 2026", time: "2:00 PM",  status: "confirmed" },
@@ -25,20 +24,12 @@ const MOCK_REVIEWS = [
   { id: 2, from: "Jalen H.", rating: 4, text: "Very patient and clear explanations.",  service: "Math Tutoring" },
 ];
 
-const PROVIDER_STATS  = [
-  { label: "Pending Requests", value: "2"    },
-  { label: "Completed Jobs",   value: "14"   },
-  { label: "Total Earned",     value: "$620" },
-  { label: "Avg Rating",       value: "4.8"  },
+const STATS = [
+  { label: "Active Bookings",   value: "3"    },
+  { label: "Pending Requests",  value: "2"    },
+  { label: "Jobs Completed",    value: "14"   },
+  { label: "Avg Rating",        value: "4.8"  },
 ];
-
-const REQUESTER_STATS = [
-  { label: "Active Bookings", value: "3"    },
-  { label: "Completed",       value: "9"    },
-  { label: "Total Spent",     value: "$310" },
-  { label: "Reviews Given",   value: "7"    },
-];
-// ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS = {
   confirmed: { color: "#22c55e" },
@@ -77,15 +68,12 @@ function SectionCard({ title, action, actionLabel, children }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 function Dashboard({ onSelectService, onNavigate, currentUser }) {
   const [services, setServices]         = useState([]);
   const [loadingServices, setLoading]   = useState(true);
 
-  const user       = currentUser || MOCK_USER;
-  const isProvider = user.role === "provider";
-  const stats      = isProvider ? PROVIDER_STATS : REQUESTER_STATS;
+  const user  = currentUser || MOCK_USER;
+  const stats = STATS;
 
   useEffect(() => {
     fetch("/api/services/")
@@ -98,15 +86,10 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
   return (
     <div style={s.page}>
 
-      {/* Header */}
       <div style={s.header}>
-        <div>
-          <p style={s.label}>{isProvider ? "Service Provider" : "Service Requester"}</p>
-          <h1 style={s.heading}>Welcome back, {user.name?.split(" ")[0]}</h1>
-        </div>
+        <h1 style={s.heading}>Welcome back, {user.name?.split(" ")[0] ?? user.first_name ?? user.username}</h1>
       </div>
 
-      {/* Stats */}
       <div style={s.statsRow}>
         {stats.map((stat, i) => (
           <div key={stat.label} style={{ ...s.statCard, ...(i === 0 ? s.statCardPrimary : {}) }}>
@@ -116,20 +99,17 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
         ))}
       </div>
 
-      {/* Two-column body */}
       <div style={s.grid}>
 
-        {/* Left */}
         <div style={s.col}>
 
-          {/* Upcoming Bookings */}
           <SectionCard title="Upcoming Bookings" action={() => onNavigate?.("Bookings")} actionLabel="View all">
             <div style={s.itemList}>
               {MOCK_BOOKINGS.map(b => (
                 <div key={b.id} style={s.row}>
                   <div>
                     <p style={s.itemTitle}>{b.service}</p>
-                    <p style={s.itemSub}>{isProvider ? `Client: ${b.person}` : `Provider: ${b.person}`}</p>
+                    <p style={s.itemSub}>{b.person}</p>
                   </div>
                   <div style={s.rowRight}>
                     <p style={s.itemDate}>{b.date} · {b.time}</p>
@@ -140,34 +120,26 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
             </div>
           </SectionCard>
 
-          {/* Pending Requests — provider only */}
-          {isProvider && (
-            <SectionCard
-              title="Pending Requests"
-              action={null}
-              actionLabel={null}
-            >
-              <div style={s.itemList}>
-                {MOCK_REQUESTS.map(r => (
-                  <div key={r.id} style={s.row}>
-                    <div>
-                      <p style={s.itemTitle}>{r.service}</p>
-                      <p style={s.itemSub}>From {r.from} · {r.time}</p>
-                    </div>
-                    <div style={s.rowRight}>
-                      <p style={s.priceTag}>{r.price}</p>
-                      <div style={s.btnGroup}>
-                        <button style={s.btnPrimary}>Accept</button>
-                        <button style={s.btnGhost}>Decline</button>
-                      </div>
+          <SectionCard title="Pending Requests" action={null} actionLabel={null}>
+            <div style={s.itemList}>
+              {MOCK_REQUESTS.map(r => (
+                <div key={r.id} style={s.row}>
+                  <div>
+                    <p style={s.itemTitle}>{r.service}</p>
+                    <p style={s.itemSub}>From {r.from} · {r.time}</p>
+                  </div>
+                  <div style={s.rowRight}>
+                    <p style={s.priceTag}>{r.price}</p>
+                    <div style={s.btnGroup}>
+                      <button style={s.btnPrimary}>Accept</button>
+                      <button style={s.btnGhost}>Decline</button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
 
-          {/* Reviews */}
           <SectionCard title="Reviews" action={() => onNavigate?.("Reviews")} actionLabel="View all">
             <div style={s.itemList}>
               {MOCK_REVIEWS.map(r => (
@@ -188,10 +160,8 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
 
         </div>
 
-        {/* Right */}
         <div style={s.col}>
 
-          {/* Messages */}
           <SectionCard title="Messages" action={() => onNavigate?.("Messages")} actionLabel="View all">
             <div style={s.itemList}>
               {MOCK_MESSAGES.map(m => (
@@ -210,7 +180,6 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
             </div>
           </SectionCard>
 
-          {/* Discover Services */}
           <SectionCard title="Discover Services" action={() => onNavigate?.("Search Services")} actionLabel="Browse all">
             {loadingServices ? (
               <p style={s.dimText}>Loading...</p>
@@ -235,7 +204,6 @@ function Dashboard({ onSelectService, onNavigate, currentUser }) {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const PURPLE = "rgb(83, 58, 253)";
 const DARK   = "#0f0620";
 
@@ -248,8 +216,6 @@ const s = {
     overflowY: "auto",
     boxSizing: "border-box",
   },
-
-  // Header
   header: {
     marginBottom: "28px",
   },
@@ -267,8 +233,6 @@ const s = {
     color: DARK,
     margin: 0,
   },
-
-  // Stats row
   statsRow: {
     display: "grid",
     gridTemplateColumns: "repeat(4, 1fr)",
@@ -298,8 +262,6 @@ const s = {
     margin: 0,
     fontWeight: "500",
   },
-
-  // Grid layout
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -311,8 +273,6 @@ const s = {
     flexDirection: "column",
     gap: "18px",
   },
-
-  // Section card
   card: {
     background: "white",
     borderRadius: "12px",
@@ -340,8 +300,6 @@ const s = {
     padding: 0,
     fontFamily: "'Poppins', sans-serif",
   },
-
-  // List items
   itemList: {
     display: "flex",
     flexDirection: "column",
@@ -377,9 +335,6 @@ const s = {
     color: "#888",
     margin: 0,
   },
-
-
-  // Request actions
   priceTag: {
     fontSize: "13px",
     fontWeight: "700",
@@ -411,8 +366,6 @@ const s = {
     cursor: "pointer",
     fontFamily: "'Poppins', sans-serif",
   },
-
-  // Messages
   msgRow: {
     display: "flex",
     alignItems: "center",
@@ -422,9 +375,7 @@ const s = {
     cursor: "pointer",
     position: "relative",
   },
-  msgRowUnread: {
-    // slightly bold feel via text, not background
-  },
+  msgRowUnread: {},
   msgBody: {
     flex: 1,
     minWidth: 0,
@@ -454,8 +405,6 @@ const s = {
     background: PURPLE,
     flexShrink: 0,
   },
-
-  // Avatar
   avatar: {
     borderRadius: "50%",
     background: "linear-gradient(135deg, rgb(83, 58, 253), #c4b5fd)",
@@ -467,8 +416,6 @@ const s = {
     flexShrink: 0,
     fontFamily: "'Poppins', sans-serif",
   },
-
-  // Reviews
   reviewRow: {
     display: "flex",
     gap: "12px",
@@ -498,8 +445,6 @@ const s = {
     margin: 0,
     lineHeight: 1.5,
   },
-
-  // Services
   serviceGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -529,7 +474,6 @@ const s = {
     color: PURPLE,
     margin: 0,
   },
-
   dimText: {
     fontSize: "13px",
     color: "#bbb",

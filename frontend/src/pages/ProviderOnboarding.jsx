@@ -109,7 +109,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
             </div>
           ) : (
             <>
-              {/* step progress */}
               <div style={styles.stepsWrap}>
                 {stepLabels.map((label, i) => {
                   const n = i + 1;
@@ -317,7 +316,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
               {saveError && <p style={{ color: 'red', fontSize: '13px', marginTop: '12px' }}>{saveError}</p>}
               <div style={styles.navRow}>
                 <button onClick={goBack} style={styles.backBtn}>
-                  {step === 1 ? '← Back to signup' : '← Back'}
+                  ← Back
                 </button>
                 <button onClick={goNext} disabled={saving} style={styles.continueBtn}>
                   {step === 4 ? (saving ? 'Saving...' : 'Finish setup') : 'Continue →'}
@@ -377,7 +376,6 @@ const styles = {
     marginBottom: '24px',
   },
 
-  /* step indicator */
   stepsWrap: {
     display: 'flex',
     alignItems: 'center',
@@ -417,7 +415,6 @@ const styles = {
     letterSpacing: '0.2px',
   },
 
-  /* step content */
   stepTitle: {
     fontSize: '22px',
     fontWeight: '700',
@@ -431,7 +428,6 @@ const styles = {
     lineHeight: '1.5',
   },
 
-  /* photo upload */
   photoWrap: {
     display: 'flex',
     flexDirection: 'column',
@@ -519,7 +515,6 @@ const styles = {
     lineHeight: '1.6',
   },
 
-  /* skill tags */
   tagsBox: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -570,7 +565,6 @@ const styles = {
     marginBottom: '4px',
   },
 
-  /* service listing */
   select: {
     width: '100%',
     padding: '12px 14px',
@@ -638,7 +632,6 @@ const styles = {
     height: '100%',
   },
 
-  /* nav buttons */
   navRow: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -667,7 +660,6 @@ const styles = {
     fontFamily: "'Poppins', sans-serif",
   },
 
-  /* done screen */
   doneWrap: {
     display: 'flex',
     flexDirection: 'column',

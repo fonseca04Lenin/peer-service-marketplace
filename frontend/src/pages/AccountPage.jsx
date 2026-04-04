@@ -47,7 +47,7 @@ function AccountPage({ currentUser, onSelectService }) {
                 <div>
                     <p><strong>Username: </strong> {user.username}</p>
                     <p><strong>Email: </strong> {user.email}</p>
-                    <p><strong>Role: </strong> {user.role}</p>
+
                     {user.bio && (
                         <div>
                             <h3>Bio</h3>

@@ -46,6 +46,7 @@ function LandingPage({ onSignIn, onGetStarted }) {
           <p style={styles.subtext}>
             Connect with trusted peers to get work done or list your services and start earning today.
           </p>
+          <button onClick={onGetStarted} style={styles.ctaBtn}>Get started →</button>
         </div>
 
         <div style={styles.heroRight}>
@@ -74,9 +75,6 @@ function LandingPage({ onSignIn, onGetStarted }) {
                   <p style={styles.perkDesc}>{perk.desc}</p>
                 </div>
               ))}
-              <button onClick={onGetStarted} style={styles.goBtn}>
-                {selected === 'hire' ? 'Find someone →' : 'Start offering →'}
-              </button>
             </div>
 
           </div>
@@ -210,6 +208,7 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     width: 'fit-content',
+    fontFamily: "'Poppins', sans-serif",
   },
 
   heroRight: {
@@ -273,19 +272,6 @@ const styles = {
     color: '#6b7280',
     margin: 0,
     lineHeight: '1.55',
-  },
-  goBtn: {
-    marginTop: '6px',
-    background: 'rgb(83, 58, 253)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    padding: '13px 24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    fontFamily: "'Poppins', sans-serif",
-    alignSelf: 'flex-start',
   },
 };
 
