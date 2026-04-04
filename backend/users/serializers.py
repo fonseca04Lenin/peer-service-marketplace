@@ -31,4 +31,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role', 'bio', 'wallet_balance']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'role',
+                  'bio', 'tagline', 'location', 'skills', 'wallet_balance']
+
+
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['bio', 'tagline', 'location', 'skills']

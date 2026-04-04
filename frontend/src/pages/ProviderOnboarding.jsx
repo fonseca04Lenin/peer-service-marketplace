@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { apiFetch } from '../api';
 
 function ProviderOnboarding({ onFinish, onBack }) {
   const [step, setStep] = useState(1);
@@ -19,6 +20,9 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [rateType, setRateType] = useState('hour');
   const [serviceDesc, setServiceDesc] = useState('');
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
   const photoRef = useRef(null);
 
   const handlePhoto = (e) => {
@@ -38,7 +42,42 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const removeSkill = (s) => setSkills(skills.filter(x => x !== s));
 
   const goBack = () => step === 1 ? onBack() : setStep(step - 1);
-  const goNext = () => step === 4 ? setDone(true) : setStep(step + 1);
+
+  async function handleFinish() {
+    setSaving(true);
+    setSaveError('');
+    try {
+      await apiFetch('/users/me/', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          bio,
+          tagline,
+          location,
+          skills: skills.join(','),
+        }),
+      });
+
+      if (serviceTitle && servicePrice) {
+        await apiFetch('/services/create/', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: serviceTitle,
+            description: serviceDesc,
+            category: serviceCategory,
+            price: servicePrice,
+          }),
+        });
+      }
+
+      setDone(true);
+    } catch {
+      setSaveError('Something went wrong. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const goNext = () => step === 4 ? handleFinish() : setStep(step + 1);
 
   const stepLabels = ['Profile', 'About', 'Skills', 'Service'];
 
@@ -275,12 +314,13 @@ function ProviderOnboarding({ onFinish, onBack }) {
                 </div>
               )}
 
+              {saveError && <p style={{ color: 'red', fontSize: '13px', marginTop: '12px' }}>{saveError}</p>}
               <div style={styles.navRow}>
                 <button onClick={goBack} style={styles.backBtn}>
                   {step === 1 ? '← Back to signup' : '← Back'}
                 </button>
-                <button onClick={goNext} style={styles.continueBtn}>
-                  {step === 4 ? 'Finish setup' : 'Continue →'}
+                <button onClick={goNext} disabled={saving} style={styles.continueBtn}>
+                  {step === 4 ? (saving ? 'Saving...' : 'Finish setup') : 'Continue →'}
                 </button>
               </div>
             </>
