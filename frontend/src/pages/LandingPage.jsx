@@ -145,7 +145,7 @@ const styles = {
   heroBg: {
     position: 'absolute',
     inset: 0,
-    backgroundImage: 'url(/minecraft.png)',
+    backgroundImage: 'url(/MovingFurniture.png)',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     zIndex: 0,

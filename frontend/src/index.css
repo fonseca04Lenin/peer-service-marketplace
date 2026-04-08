@@ -24,3 +24,44 @@ html, body, #root {
   animation: bgZoom 14s ease-in-out infinite;
   z-index: 0;
 }
+
+.carpentry-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url(/Carpentry.png);
+  background-size: cover;
+  background-position: center;
+  animation: bgZoom 14s ease-in-out infinite;
+  z-index: 0;
+}
+
+.market-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url(/Market.png);
+  background-size: cover;
+  background-position: center;
+  animation: bgZoom 14s ease-in-out infinite;
+  z-index: 0;
+}
+
+.market2-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url(/Market2.png);
+  background-size: cover;
+  background-position: center;
+  animation: bgZoom 14s ease-in-out infinite;
+  z-index: 0;
+}
+
+.furniture-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url(/MovingFurniture.png);
+  background-size: cover;
+  background-position: center;
+  animation: bgZoom 14s ease-in-out infinite;
+  z-index: 0;
+}
+

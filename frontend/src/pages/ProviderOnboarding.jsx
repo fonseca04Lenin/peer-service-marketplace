@@ -83,7 +83,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
 
   return (
     <div style={styles.page}>
-      <div className="mc-bg" />
+      <div className="market-bg" />
 
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>

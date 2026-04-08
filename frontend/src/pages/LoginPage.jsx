@@ -36,7 +36,7 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
 
   return (
     <div style={styles.page}>
-      <div className="mc-bg" />
+      <div className="market2-bg" />
 
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>

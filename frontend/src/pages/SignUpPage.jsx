@@ -48,7 +48,7 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
 
   return (
     <div style={styles.page}>
-      <div className="mc-bg" />
+      <div className="carpentry-bg" />
 
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>
