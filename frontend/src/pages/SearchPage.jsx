@@ -1,19 +1,14 @@
 import { useState, useEffect } from "react";
 
 const POPULAR_CATEGORIES = [
-  { label: "Web Development",   color: "#C0143C" },
-  { label: "Graphic Design",    color: "#9B1D6A" },
-  { label: "Girlfriend",          color: "#B5192B" },
-  { label: "Video Editing",     color: "#7B1FA2" },
-  { label: "Photography",       color: "#C62828" },
-  { label: "Writing",           color: "#AD1457" },
-  { label: "Math Help",         color: "#8E0038" },
-  { label: "Music Lessons",     color: "#6A1B9A" },
-  { label: "Handyman",          color: "#B71C1C" },
-  { label: "Moving Help",       color: "#880E4F" },
-  { label: "Language Tutoring", color: "#A0196A" },
-  { label: "Resume Review",     color: "#C2185B" },
-  { label: "Gambler",          color: "#880E4F" },
+  {label: "Tech Services",      color: "#0011ff" },
+  {label: "Creative Services", color: "#ff0044" },
+  {label: "Home Services",     color: "#00ff00" },
+  {label: "Education",         color: "#00e1ff" },
+  {label: "Health & Wellness", color: "#ff00bf" },
+  {label: "Financial Services", color: "#058d05" },
+  {label: "Business Services", color: "#00196b" },
+  {label: "Other",             color: "#fdec00" },
 ];
 
 function SearchPage({ onSelectService }) {
@@ -26,11 +21,14 @@ function SearchPage({ onSelectService }) {
     fetch("/api/services/")
       .then(res => res.json())
       .then(data => setServices(data))
+      .finally(() => setLoading(false))
+      .catch(() => setServices([]))
       .finally(() => setLoading(false));
   }, []);
 
   const filteredServices = services.filter(service =>
-    service.title?.toLowerCase().includes(query.toLowerCase())
+    service.title?.toLowerCase().includes(query.toLowerCase()) ||
+    service.category?.toLowerCase().includes(query.toLowerCase())
   );
 
   const showCategories = query.trim() === "";

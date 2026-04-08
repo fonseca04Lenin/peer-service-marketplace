@@ -65,11 +65,18 @@ function MainPage({ currentUser, onLogout, onStartOnboarding }) {
         {active === 'Profile Overview' && (
           <AccountPage currentUser={currentUser} onSelectService={setSelectedServiceID} />
         )}
-        {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
-        {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
-        {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
-        {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
-        {active === 'Settings' && <h1>Settings</h1>}
+        {selectedServciceID
+          ? <ServicePage id={selectedServiceIR} onBack={() => setSelectedServiceID(null)} />
+          :active === 'Search Services' && 
+          <SearchPage onSelectService={setSelectedServiceID} />}
+        {active === 'Bookings' && 
+          <BookingsPage currentUser={currentUser} />}
+        {active === 'Messages' && 
+          <MessagesPage currentUser={currentUser} />}
+        {active === 'Reviews' && 
+          <ReviewsPage currentUser={currentUser} />}
+        {active === 'Settings' && 
+          <h1>Settings</h1>}
       </main>
 
     </div>

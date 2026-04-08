@@ -14,6 +14,7 @@ function ServicePage( {id} ) {
 
     return (
         <div style={s.page}>
+          <button onClick={onBack} style={s.backBtn}>← Back</button>
             <div style={s.card}>
                 <h1 style={s.cardTitle}>{service.title}</h1>
                 <p style={s.cardDescription}>{service.description}</p>
@@ -61,6 +62,17 @@ const s = {
     color: "#666",
     textAlign: "center",
     marginTop: "32px",
+  },
+  backBtn: {
+    background: "none",
+    border: "none",
+    color: "#0f0620",
+    fontSize: "14px",
+    fontWeight: "600",
+    cursor: "pointer",
+    marginBottom: "20px",
+    padding: "0",
+    fontFamily: "'Poppins', sans-serif",
   },
 };
 
