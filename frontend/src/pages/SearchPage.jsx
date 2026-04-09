@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const POPULAR_CATEGORIES = [
   { label: "Web Development",   color: "#C0143C" },
@@ -19,15 +19,24 @@ const POPULAR_CATEGORIES = [
 function SearchPage({ onSelectService }) {
   const [services, setServices] = useState([]);
   const [query, setQuery]       = useState("");
+  const [location, setLocation] = useState("");
   const [loading, setLoading]   = useState(true);
 
+  const debounceRef = useRef(null);
+
   useEffect(() => {
-    setLoading(true);
-    fetch("/api/services/")
-      .then(res => res.json())
-      .then(data => setServices(data))
-      .finally(() => setLoading(false));
-  }, []);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (location.trim()) params.set('location', location.trim());
+      fetch(`/api/services/?${params}`)
+        .then(res => res.json())
+        .then(data => setServices(data))
+        .finally(() => setLoading(false));
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [location]);
 
   const filteredServices = services.filter(service =>
     service.title?.toLowerCase().includes(query.toLowerCase())
@@ -39,13 +48,22 @@ function SearchPage({ onSelectService }) {
     <div style={s.page}>
       <h1 style={s.title}>Search Services</h1>
 
-      <input
-        type="text"
-        placeholder="Search Services"
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        style={s.input}
-      />
+      <div style={s.searchRow}>
+        <input
+          type="text"
+          placeholder="Search services..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          style={{ ...s.input, flex: 2 }}
+        />
+        <input
+          type="text"
+          placeholder="City, State"
+          value={location}
+          onChange={e => setLocation(e.target.value)}
+          style={{ ...s.input, flex: 1 }}
+        />
+      </div>
 
       {showCategories && (
         <div style={s.categoriesSection}>
@@ -77,7 +95,15 @@ function SearchPage({ onSelectService }) {
             <div key={service.id} style={s.card} onClick={() => onSelectService(service.id)}>
               <h3 style={s.cardTitle}>{service.title}</h3>
               <p style={s.cardDescription}>{service.description}</p>
-              {service.category && <p style={s.cardCategory}>{service.category}</p>}
+              <div style={s.cardMeta}>
+                {service.category && <span style={s.cardCategory}>{service.category}</span>}
+                {service.is_remote
+                  ? <span style={s.remoteBadge}>Remote</span>
+                  : service.service_area
+                    ? <span style={s.areaBadge}>{service.service_area}</span>
+                    : null
+                }
+              </div>
               {service.price && <p style={s.cardPrice}>${service.price}</p>}
             </div>
           ))}
@@ -105,18 +131,22 @@ const s = {
     marginBottom: "20px",
     color: "#0f0620",
   },
+  searchRow: {
+    display: "flex",
+    gap: "12px",
+    marginBottom: "24px",
+  },
   input: {
-    width: "100%",
     padding: "12px 16px",
     fontSize: "14px",
     borderRadius: "8px",
     border: "1px solid #ede9fe",
-    marginBottom: "24px",
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "'Poppins', sans-serif",
     color: "#0f0620",
     background: "white",
+    width: "100%",
   },
 
   // Categories
@@ -171,10 +201,34 @@ const s = {
     color: "#666",
     lineHeight: 1.5,
   },
+  cardMeta: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "8px",
+    flexWrap: "wrap",
+  },
   cardCategory: {
     fontSize: "11.5px",
     color: "#aaa",
-    margin: "0 0 6px",
+  },
+  remoteBadge: {
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "rgb(83, 58, 253)",
+    background: "#f0eeff",
+    border: "1px solid #d4c8ff",
+    borderRadius: "20px",
+    padding: "2px 8px",
+  },
+  areaBadge: {
+    fontSize: "11px",
+    fontWeight: "500",
+    color: "#555",
+    background: "#f5f5f5",
+    border: "1px solid #e0e0e0",
+    borderRadius: "20px",
+    padding: "2px 8px",
   },
   cardPrice: {
     fontSize: "14px",

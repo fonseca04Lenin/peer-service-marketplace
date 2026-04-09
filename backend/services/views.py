@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Q
 
 from .models import Service
 from .serializers import ServiceSerializer
@@ -19,6 +20,16 @@ def list_services(request):
     keyword = request.query_params.get('q')
     if keyword:
         services = services.filter(title__icontains=keyword)
+
+    provider_id = request.query_params.get('provider')
+    if provider_id:
+        services = services.filter(provider_id=provider_id)
+
+    location = request.query_params.get('location')
+    if location:
+        services = services.filter(
+            Q(service_area__icontains=location) | Q(is_remote=True)
+        )
 
     serializer = ServiceSerializer(services, many=True)
     return Response(serializer.data)

@@ -58,11 +58,15 @@ def logout(request):
     return Response({'message': 'Logged out.'})
 
 
-@api_view(['GET', 'PATCH'])
+@api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def me(request):
     if request.method == 'GET':
         return Response(UserSerializer(request.user).data)
+
+    if request.method == 'DELETE':
+        request.user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     serializer = UpdateProfileSerializer(request.user, data=request.data, partial=True)
     if serializer.is_valid():

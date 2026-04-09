@@ -9,10 +9,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name']
+        fields = ['id', 'username', 'email', 'password',
+                  'first_name', 'last_name', 'country', 'city']
         extra_kwargs = {
             'email':      {'required': True},
-            'first_name': {'required': False},
+            'first_name': {'required': True},
+            'last_name':  {'required': True},
+            'country':    {'required': True},
+            'city':       {'required': True},
         }
 
     def validate_email(self, value):
@@ -32,10 +36,15 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name',
-                  'bio', 'tagline', 'location', 'skills', 'wallet_balance']
+                  'bio', 'tagline', 'city', 'country', 'skills', 'wallet_balance',
+                  'profile_public', 'messaging_pref', 'role',
+                  'phone', 'address', 'date_of_birth']
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['bio', 'tagline', 'location', 'skills']
+        fields = ['username', 'email', 'role',
+                  'bio', 'tagline', 'city', 'country', 'skills',
+                  'profile_public', 'messaging_pref',
+                  'phone', 'address', 'date_of_birth']

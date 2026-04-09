@@ -10,10 +10,11 @@ class Payment(models.Model):
         ('refunded', 'Refunded'),
     ]
 
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='payment')
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
+    booking              = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='payment')
+    amount               = models.DecimalField(max_digits=8, decimal_places=2)
+    status               = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    stripe_payment_intent_id = models.CharField(max_length=200, blank=True)
+    created_at           = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'Payment for booking {self.booking.id} — ${self.amount}'
