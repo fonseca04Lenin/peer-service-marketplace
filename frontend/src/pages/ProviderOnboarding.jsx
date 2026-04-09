@@ -1,15 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../api';
 
 function ProviderOnboarding({ onFinish, onBack }) {
   const [step, setStep] = useState(1);
   const [done, setDone] = useState(false);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [returningUser, setReturningUser] = useState(false);
 
   const [photo, setPhoto] = useState(null);
   const [tagline, setTagline] = useState('');
 
   const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
 
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState('');
@@ -19,11 +20,33 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [servicePrice, setServicePrice] = useState('');
   const [rateType, setRateType] = useState('hour');
   const [serviceDesc, setServiceDesc] = useState('');
+  const [serviceArea, setServiceArea] = useState('');
+  const [isRemote, setIsRemote] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   const photoRef = useRef(null);
+
+  useEffect(() => {
+    apiFetch('/users/me/')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) { setCheckingProfile(false); return; }
+
+        if (data.tagline) setTagline(data.tagline);
+        if (data.bio)     setBio(data.bio);
+        if (data.skills)  setSkills(data.skills.split(',').filter(Boolean));
+
+        const hasProfile = data.bio || data.tagline || data.skills;
+        if (hasProfile) {
+          setReturningUser(true);
+          setStep(4);
+        }
+        setCheckingProfile(false);
+      })
+      .catch(() => setCheckingProfile(false));
+  }, []);
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
@@ -52,7 +75,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
         body: JSON.stringify({
           bio,
           tagline,
-          location,
           skills: skills.join(','),
         }),
       });
@@ -65,6 +87,8 @@ function ProviderOnboarding({ onFinish, onBack }) {
             description: serviceDesc,
             category: serviceCategory,
             price: servicePrice,
+            service_area: isRemote ? '' : serviceArea,
+            is_remote: isRemote,
           }),
         });
       }
@@ -77,9 +101,37 @@ function ProviderOnboarding({ onFinish, onBack }) {
     }
   }
 
-  const goNext = () => step === 4 ? handleFinish() : setStep(step + 1);
+  const goNext = () => {
+    if (step === 4) {
+      if (!isRemote && !serviceArea.trim()) {
+        setSaveError('Please enter a service area or check "This service can be done remotely".');
+        return;
+      }
+      handleFinish();
+    } else {
+      setStep(step + 1);
+    }
+  };
 
   const stepLabels = ['Profile', 'About', 'Skills', 'Service'];
+
+  if (checkingProfile) {
+    return (
+      <div style={styles.page}>
+        <div className="market-bg" />
+        <nav style={styles.nav}>
+          <span style={styles.logo}>
+            <span style={{ fontWeight: 400 }}>peer</span>
+            <span style={{ color: 'rgb(167, 139, 250)' }}>·</span>
+            <span style={{ fontWeight: 700 }}>market</span>
+          </span>
+        </nav>
+        <div style={{ ...styles.scroll, justifyContent: 'center' }}>
+          <p style={{ color: 'white', fontSize: '14px', opacity: 0.7 }}>Loading your profile…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
@@ -208,17 +260,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     rows={5}
                   />
 
-                  <label style={styles.label}>
-                    Location{' '}
-                    <span style={styles.optional}>(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="City, State"
-                    style={styles.input}
-                  />
                 </div>
               )}
 
@@ -249,8 +290,13 @@ function ProviderOnboarding({ onFinish, onBack }) {
 
               {step === 4 && (
                 <div>
-                  <h2 style={styles.stepTitle}>Your first listing</h2>
-                  <p style={styles.stepSub}>You can always come back and edit this later.</p>
+                  <h2 style={styles.stepTitle}>{returningUser ? 'Add a new listing' : 'Your first listing'}</h2>
+                  <p style={styles.stepSub}>
+                    {returningUser
+                      ? <>Profile already set up. <span style={{ color: 'rgb(83,58,253)', cursor: 'pointer' }} onClick={() => setStep(1)}>Edit it →</span></>
+                      : 'You can always come back and edit this later.'
+                    }
+                  </p>
 
                   <label style={styles.label}>Service title</label>
                   <input
@@ -310,6 +356,31 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     style={styles.textarea}
                     rows={4}
                   />
+
+                  <div style={styles.remoteRow}>
+                    <label style={styles.remoteLabel}>
+                      <input
+                        type="checkbox"
+                        checked={isRemote}
+                        onChange={(e) => setIsRemote(e.target.checked)}
+                        style={{ marginRight: '8px', accentColor: 'rgb(83, 58, 253)' }}
+                      />
+                      This service can be done remotely
+                    </label>
+                  </div>
+
+                  {!isRemote && (
+                    <>
+                      <label style={styles.label}>Service area</label>
+                      <input
+                        type="text"
+                        value={serviceArea}
+                        onChange={(e) => setServiceArea(e.target.value)}
+                        placeholder="e.g. Austin, TX"
+                        style={styles.input}
+                      />
+                    </>
+                  )}
                 </div>
               )}
 
@@ -563,6 +634,17 @@ const styles = {
     fontSize: '12px',
     color: '#aaa',
     marginBottom: '4px',
+  },
+  remoteRow: {
+    marginBottom: '20px',
+  },
+  remoteLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: '14px',
+    color: '#444',
+    cursor: 'pointer',
+    fontWeight: '500',
   },
 
   select: {

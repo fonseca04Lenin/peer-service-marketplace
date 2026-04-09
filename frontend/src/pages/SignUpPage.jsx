@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import { saveToken } from '../api';
+import { COUNTRIES } from '../constants';
 
 function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [username,  setUsername]  = useState('');
+  const [email,     setEmail]     = useState('');
+  const [password,  setPassword]  = useState('');
+  const [country,   setCountry]   = useState('');
+  const [city,      setCity]      = useState('');
+  const [error,     setError]     = useState('');
+  const [loading,   setLoading]   = useState(false);
 
   async function handleSubmit() {
     setError('');
 
-    if (!username || !email || !password) {
+    if (!firstName || !lastName || !username || !email || !password || !country || !city) {
       setError('Please fill in all fields.');
       return;
     }
@@ -26,6 +31,10 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
           username,
           email,
           password,
+          first_name: firstName,
+          last_name:  lastName,
+          country,
+          city,
         }),
       });
 
@@ -64,6 +73,27 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
 
           {error && <div style={styles.error}>{error}</div>}
 
+          <div style={styles.nameRow}>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>First name</label>
+              <input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Optimus"
+                style={styles.input}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Last name</label>
+              <input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Prime"
+                style={styles.input}
+              />
+            </div>
+          </div>
+
           <label style={styles.label}>Username</label>
           <input
             value={username}
@@ -87,6 +117,27 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             style={styles.input}
+          />
+
+          <label style={styles.label}>Country</label>
+          <select
+            value={country}
+            onChange={(e) => { setCountry(e.target.value); setCity(''); }}
+            style={styles.select}
+          >
+            <option value="">Select your country</option>
+            {COUNTRIES.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          <label style={styles.label}>City</label>
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="e.g. Austin"
+            style={styles.input}
+            disabled={!country}
           />
 
           <button onClick={handleSubmit} disabled={loading} style={styles.button}>
@@ -147,39 +198,60 @@ const styles = {
   },
   card: {
     background: 'white',
-    padding: '48px',
+    padding: '32px 40px',
     borderRadius: '10px',
     width: '480px',
     boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
   },
   title: {
-    margin: '0 0 32px 0',
+    margin: '0 0 18px 0',
     fontSize: '22px',
     fontWeight: '600',
     color: '#0f0620',
+  },
+  nameRow: {
+    display: 'flex',
+    gap: '14px',
+    marginBottom: '0',
   },
   label: {
     display: 'block',
     fontSize: '13px',
     fontWeight: '500',
     color: '#444',
-    marginBottom: '8px',
+    marginBottom: '5px',
   },
   input: {
     width: '100%',
-    padding: '12px 14px',
-    marginBottom: '20px',
+    padding: '9px 14px',
+    marginBottom: '13px',
     boxSizing: 'border-box',
     border: '1px solid #dde3ea',
     borderRadius: '6px',
-    fontSize: '15px',
+    fontSize: '14px',
     outline: 'none',
     color: '#0f0620',
     fontFamily: "'Poppins', sans-serif",
   },
+  select: {
+    width: '100%',
+    padding: '9px 14px',
+    marginBottom: '13px',
+    boxSizing: 'border-box',
+    border: '1px solid #dde3ea',
+    borderRadius: '6px',
+    fontSize: '14px',
+    outline: 'none',
+    color: '#0f0620',
+    fontFamily: "'Poppins', sans-serif",
+    background: 'white',
+    cursor: 'pointer',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+  },
   button: {
     width: '100%',
-    padding: '13px',
+    padding: '11px',
     background: 'rgb(83, 58, 253)',
     color: 'white',
     border: 'none',
@@ -190,7 +262,7 @@ const styles = {
     fontFamily: "'Poppins', sans-serif",
   },
   divider: {
-    margin: '24px 0 20px 0',
+    margin: '14px 0 12px 0',
   },
   hr: {
     border: 'none',

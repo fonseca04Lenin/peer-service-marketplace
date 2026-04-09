@@ -5,6 +5,7 @@ import Dashboard from './Dashboard';
 import BookingsPage from './BookingsPage';
 import MessagesPage from './MessagesPage';
 import ReviewsPage from './ReviewsPage';
+import SettingsPage from './SettingsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings', 'Offer Services'];
 
@@ -69,7 +70,7 @@ function MainPage({ currentUser, onLogout, onStartOnboarding }) {
         {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
         {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
         {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
-        {active === 'Settings' && <h1>Settings</h1>}
+        {active === 'Settings' && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
       </main>
 
     </div>

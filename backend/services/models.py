@@ -17,6 +17,8 @@ class Service(models.Model):
     description = models.TextField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    service_area = models.CharField(max_length=100, blank=True)
+    is_remote = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
