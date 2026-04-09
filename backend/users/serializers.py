@@ -38,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name',
                   'bio', 'tagline', 'city', 'country', 'skills', 'wallet_balance',
                   'profile_public', 'messaging_pref', 'role',
-                  'phone', 'address', 'date_of_birth']
+                  'phone', 'address', 'date_of_birth', 'profile_picture']
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
