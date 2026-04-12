@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import ServicePage from "./ServicePage";
 
 const POPULAR_CATEGORIES = [
   { label: "Web Development",   color: "#C0143C" },
@@ -18,6 +19,7 @@ const POPULAR_CATEGORIES = [
 
 function SearchPage({ onSelectService }) {
   const [services, setServices] = useState([]);
+  const [selectedId, setSelectedId] = useState(null)
   const [query, setQuery]       = useState("");
   const [location, setLocation] = useState("");
   const [loading, setLoading]   = useState(true);
@@ -43,6 +45,10 @@ function SearchPage({ onSelectService }) {
   );
 
   const showCategories = query.trim() === "";
+
+  if (selectedId) {
+    return <ServicePage id={selectedId} onBack={() => setSelectedId(null)} />;
+  }
 
   return (
     <div style={s.page}>
@@ -91,22 +97,64 @@ function SearchPage({ onSelectService }) {
         <p style={s.dim}>Loading services...</p>
       ) : (
         <div style={s.results}>
-          {filteredServices.map(service => (
-            <div key={service.id} style={s.card} onClick={() => onSelectService(service.id)}>
-              <h3 style={s.cardTitle}>{service.title}</h3>
-              <p style={s.cardDescription}>{service.description}</p>
-              <div style={s.cardMeta}>
-                {service.category && <span style={s.cardCategory}>{service.category}</span>}
-                {service.is_remote
-                  ? <span style={s.remoteBadge}>Remote</span>
-                  : service.service_area
-                    ? <span style={s.areaBadge}>{service.service_area}</span>
-                    : null
-                }
+          {filteredServices.map(service => {
+            const p = service.provider;
+            return (
+          <div
+            key={service.id}
+            style={s.card}
+            onClick={() => setSelectedId(service.id)}
+          >
+            <img
+              src={p?.profile_picture}
+              alt="provider"
+              style={s.avatar}
+            />
+
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                <div>
+                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#0f0620" }}>
+                    {p?.first_name} {p?.last_name}
+                  </span>
+                  <span style={{ fontSize: "12px", color: "#aaa", marginLeft: "8px" }}>
+                    {p?.city}, {p?.country}
+                  </span>
+                </div>
+                <div style={{ fontWeight: "700", fontSize: "16px", color: "#4a3aff", whiteSpace: "nowrap" }}>
+                  ${service.price}
+                </div>
               </div>
-              {service.price && <p style={s.cardPrice}>${service.price}</p>}
+
+              <h3 style={s.cardTitle}>{service.title}</h3>
+
+              <p style={s.cardDescription}>
+                {service.description?.length > 220
+                  ? service.description.slice(0, 220) + "..."
+                  : service.description}
+              </p>
+
+              {p?.tagline && (
+                <p style={{ fontSize: "12px", color: "#999", margin: "0 0 10px", fontStyle: "italic" }}>
+                  "{p.tagline}"
+                </p>
+              )}
+
+              <div style={s.cardMeta}>
+                {service.category && (
+                  <span style={s.cardCategory}>{service.category}</span>
+                )}
+                {service.is_remote ? (
+                  <span style={s.remoteBadge}>Remote</span>
+                ) : (
+                  <span style={s.areaBadge}>{p?.city}, {p?.country}</span>
+                )}
+              </div>
             </div>
-          ))}
+          </div>
+        );
+
+        })}
           {filteredServices.length === 0 && (
             <p style={s.dim}>No services found for "{query}"</p>
           )}
@@ -178,16 +226,26 @@ const s = {
 
   // Results
   results: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+    display: "flex",
+    flexDirection: "column",
     gap: "16px",
+  },
+  avatar: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    flexShrink: 0,
   },
   card: {
     background: "white",
-    padding: "20px",
+    padding: "24px 28px",
     borderRadius: "12px",
     border: "1px solid #ede9fe",
     cursor: "pointer",
+    display: "flex",
+    gap: "20px",
+    alignItems: "flex-start",
   },
   cardTitle: {
     margin: "0 0 8px",
