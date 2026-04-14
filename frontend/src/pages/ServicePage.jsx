@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { apiFetch, getToken } from "../api";
 
 const PURPLE = "rgb(83, 58, 253)";
-const PURPLE_SOFT = "#f0eeff";
+const PURPLE_SOFT = "#ede9fe";
 
 function defaultLocalDatetime() {
   const d = new Date();
@@ -51,9 +51,9 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
     if (!msgBody.trim()) return;
     setMsgSending(true);
     try {
-      const res = await apiFetch("/messaging/", {
+      const res = await apiFetch(`/messaging/${service.provider.id}/`, {
         method: "POST",
-        body: JSON.stringify({ receiver: service.provider.id, body: msgBody.trim() }),
+        body: JSON.stringify({ body: msgBody.trim() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -562,7 +562,7 @@ const s = {
     alignItems: "center",
     marginBottom: "16px",
     paddingBottom: "12px",
-    borderBottom: "1px solid #f3f0ff",
+    borderBottom: "1px solid #ede9fe",
   },
   summaryLabel: {
     fontSize: "13px",
@@ -622,7 +622,7 @@ const s = {
     padding: "12px 18px",
     background: "white",
     color: "#666",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ede9fe",
     borderRadius: "10px",
     fontSize: "13px",
     fontWeight: "600",
