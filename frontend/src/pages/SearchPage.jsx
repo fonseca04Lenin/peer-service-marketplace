@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { apiFetch } from "../api";
 import ServicePage from "./ServicePage";
 
 const POPULAR_CATEGORIES = [
   { label: "Web Development",   color: "#C0143C" },
   { label: "Graphic Design",    color: "#9B1D6A" },
-  { label: "Girlfriend",          color: "#B5192B" },
   { label: "Video Editing",     color: "#7B1FA2" },
   { label: "Photography",       color: "#C62828" },
   { label: "Writing",           color: "#AD1457" },
@@ -14,10 +14,18 @@ const POPULAR_CATEGORIES = [
   { label: "Moving Help",       color: "#880E4F" },
   { label: "Language Tutoring", color: "#A0196A" },
   { label: "Resume Review",     color: "#C2185B" },
-  { label: "Gambler",          color: "#880E4F" },
 ];
 
-function SearchPage({ onSelectService }) {
+function matchesQuery(service, q) {
+  if (!q.trim()) return true;
+  const needle = q.trim().toLowerCase();
+  const title = (service.title || "").toLowerCase();
+  const desc = (service.description || "").toLowerCase();
+  const cat = (service.category || "").toLowerCase();
+  return title.includes(needle) || desc.includes(needle) || cat.includes(needle);
+}
+
+function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNavigate }) {
   const [services, setServices] = useState([]);
   const [selectedId, setSelectedId] = useState(null)
   const [query, setQuery]       = useState("");
@@ -31,23 +39,34 @@ function SearchPage({ onSelectService }) {
     debounceRef.current = setTimeout(() => {
       setLoading(true);
       const params = new URLSearchParams();
-      if (location.trim()) params.set('location', location.trim());
-      fetch(`/api/services/?${params}`)
-        .then(res => res.json())
-        .then(data => setServices(data))
+      if (location.trim()) params.set("location", location.trim());
+      const qs = params.toString();
+      const path = qs ? `/services/?${qs}` : "/services/";
+      apiFetch(path)
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+        .then((data) => setServices(Array.isArray(data) ? data : []))
+        .catch(() => setServices([]))
         .finally(() => setLoading(false));
     }, 400);
     return () => clearTimeout(debounceRef.current);
-  }, [location]);
+  }, [location, servicesRefreshKey]);
 
-  const filteredServices = services.filter(service =>
-    service.title?.toLowerCase().includes(query.toLowerCase())
-  );
+  const filteredServices = services.filter((service) => matchesQuery(service, query));
 
   const showCategories = query.trim() === "";
 
   if (selectedId) {
-    return <ServicePage id={selectedId} onBack={() => setSelectedId(null)} />;
+    return (
+      <ServicePage
+        id={selectedId}
+        currentUser={currentUser}
+        onBack={() => setSelectedId(null)}
+        onBooked={() => {
+          setSelectedId(null);
+          onNavigate?.('Bookings');
+        }}
+      />
+    );
   }
 
   return (
@@ -105,11 +124,13 @@ function SearchPage({ onSelectService }) {
             style={s.card}
             onClick={() => setSelectedId(service.id)}
           >
-            <img
-              src={p?.profile_picture}
-              alt="provider"
-              style={s.avatar}
-            />
+            {p?.profile_picture && (
+              <img
+                src={p.profile_picture}
+                alt="provider"
+                style={s.avatar}
+              />
+            )}
 
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
@@ -122,7 +143,7 @@ function SearchPage({ onSelectService }) {
                   </span>
                 </div>
                 <div style={{ fontWeight: "700", fontSize: "16px", color: "#4a3aff", whiteSpace: "nowrap" }}>
-                  ${service.price}
+                  ${service.price}<span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>
                 </div>
               </div>
 
@@ -156,7 +177,13 @@ function SearchPage({ onSelectService }) {
 
         })}
           {filteredServices.length === 0 && (
-            <p style={s.dim}>No services found for "{query}"</p>
+            <p style={s.dim}>
+              {services.length === 0
+                ? "No services listed yet."
+                : query.trim()
+                  ? `No services match your search.`
+                  : "No services match your filters."}
+            </p>
           )}
         </div>
       )}
@@ -197,7 +224,6 @@ const s = {
     width: "100%",
   },
 
-  // Categories
   categoriesSection: {
     marginBottom: "32px",
   },
@@ -224,7 +250,6 @@ const s = {
     fontFamily: "'Poppins', sans-serif",
   },
 
-  // Results
   results: {
     display: "flex",
     flexDirection: "column",
