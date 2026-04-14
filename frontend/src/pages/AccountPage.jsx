@@ -56,13 +56,16 @@ function EditableRow({ field, label, display, inputType = 'text', options = null
 }
 
 function AccountPage({ currentUser, onSelectService }) {
-  const [user,         setUser]         = useState(currentUser);
-  const [services,     setServices]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [editingField, setEditingField] = useState(null);
-  const [editValue,    setEditValue]    = useState('');
-  const [editError,    setEditError]    = useState('');
-  const [saving,       setSaving]       = useState(false);
+  const [user,           setUser]           = useState(currentUser);
+  const [services,       setServices]       = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [editingField,   setEditingField]   = useState(null);
+  const [editValue,      setEditValue]      = useState('');
+  const [editError,      setEditError]      = useState('');
+  const [saving,         setSaving]         = useState(false);
+  const [selectedSvcId,  setSelectedSvcId]  = useState(null);
+  const [showAllSvcs,    setShowAllSvcs]    = useState(false);
+  const [deletingId,     setDeletingId]     = useState(null);
 
   useEffect(() => {
     apiFetch("/users/me/")
@@ -70,11 +73,9 @@ function AccountPage({ currentUser, onSelectService }) {
       .then(data => {
         if (!data) return;
         setUser(data);
-        if (data.role === "provider") {
-          return apiFetch(`/services/?provider=${data.id}`)
-            .then(r => r.ok ? r.json() : [])
-            .then(setServices);
-        }
+        return apiFetch(`/services/?provider=${data.id}`)
+          .then(r => r.ok ? r.json() : [])
+          .then(setServices);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -114,6 +115,19 @@ function AccountPage({ currentUser, onSelectService }) {
     }
   }
 
+  async function deleteService(id) {
+    setDeletingId(id);
+    try {
+      const res = await apiFetch(`/services/${id}/delete/`, { method: 'DELETE' });
+      if (res.ok || res.status === 204) {
+        setServices(prev => prev.filter(sv => sv.id !== id));
+        setSelectedSvcId(null);
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (!currentUser) return <div style={s.page}><p style={s.muted}>Not logged in.</p></div>;
   if (loading)      return <div style={s.page}><p style={s.muted}>Loading…</p></div>;
 
@@ -132,7 +146,6 @@ function AccountPage({ currentUser, onSelectService }) {
   return (
     <div style={s.page}>
 
-      {/* Top bar */}
       <div style={s.topBar}>
         <h1 style={s.welcome}>Welcome back, {displayName}</h1>
         <div style={s.walletPill}>
@@ -154,7 +167,6 @@ function AccountPage({ currentUser, onSelectService }) {
 
       <hr style={s.topDivider} />
 
-      {/*Usernamee */}
       <div style={s.row}>
         <span style={s.rowLabel}>Username</span>
         <div style={s.rowFields}>
@@ -164,7 +176,6 @@ function AccountPage({ currentUser, onSelectService }) {
 
       <hr style={s.rowDivider} />
 
-      {/*Account type */}
       <div style={s.row}>
         <span style={s.rowLabel}>Account type</span>
         <div style={s.rowFields}>
@@ -183,7 +194,6 @@ function AccountPage({ currentUser, onSelectService }) {
 
       <hr style={s.rowDivider} />
 
-      {/* Contact informationn */}
       <div style={s.row}>
         <span style={s.rowLabel}>Contact info</span>
         <div style={s.rowFields}>
@@ -195,7 +205,6 @@ function AccountPage({ currentUser, onSelectService }) {
 
       <hr style={s.rowDivider} />
 
-      {/* Personal information */}
       <div style={s.row}>
         <span style={s.rowLabel}>Personal info</span>
         <div style={s.rowFields}>
@@ -221,7 +230,6 @@ function AccountPage({ currentUser, onSelectService }) {
         </div>
       </div>
 
-      {/* Provider sections */}
       {isProvider && (
         <>
           <hr style={s.rowDivider} />
@@ -250,19 +258,54 @@ function AccountPage({ currentUser, onSelectService }) {
               {services.length === 0 ? (
                 <p style={s.muted}>No listings yet — click "Offer Services" to add one.</p>
               ) : (
-                services.map((svc, i) => (
-                  <div key={svc.id}>
-                    {i > 0 && <hr style={s.subDivider} />}
-                    <div style={s.fieldRow} onClick={() => onSelectService?.(svc.id)}>
-                      <div>
-                        <p style={s.fieldLabel}>{svc.category}</p>
-                        <p style={s.fieldValue}>{svc.title}</p>
-                        <p style={s.fieldSub}>{svc.description}</p>
+                <>
+                  {(showAllSvcs ? services : services.slice(0, 5)).map((svc, i) => {
+                    const isSelected = selectedSvcId === svc.id;
+                    return (
+                      <div key={svc.id}>
+                        {i > 0 && <hr style={s.subDivider} />}
+                        {isSelected && (
+                          <div style={s.deleteBar}>
+                            <span style={s.deleteBarLabel}>Delete this listing?</span>
+                            <button
+                              style={s.deleteBtn}
+                              onClick={() => deleteService(svc.id)}
+                              disabled={deletingId === svc.id}
+                            >
+                              {deletingId === svc.id ? "Deleting…" : "Delete"}
+                            </button>
+                            <button style={s.cancelDeleteBtn} onClick={() => setSelectedSvcId(null)}>
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                        <div style={{ ...s.fieldRow, ...(isSelected ? s.fieldRowSelected : {}) }}>
+                          <div
+                            style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
+                            onClick={() => onSelectService?.(svc.id)}
+                          >
+                            <p style={s.fieldLabel}>{svc.category}</p>
+                            <p style={s.fieldValue}>{svc.title}</p>
+                            <p style={s.fieldSub}>{svc.description}</p>
+                          </div>
+                          <span style={s.fieldPrice}>${parseFloat(svc.price).toFixed(2)}</span>
+                          <button
+                            style={s.selectIcon}
+                            onClick={() => setSelectedSvcId(isSelected ? null : svc.id)}
+                            title="Delete listing"
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
-                      <span style={s.fieldPrice}>${parseFloat(svc.price).toFixed(2)}</span>
-                    </div>
-                  </div>
-                ))
+                    );
+                  })}
+                  {services.length > 5 && (
+                    <button style={s.showMoreBtn} onClick={() => setShowAllSvcs(p => !p)}>
+                      {showAllSvcs ? "Show less" : `Show ${services.length - 5} more`}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -408,6 +451,67 @@ const s = {
     fontSize: "12.5px",
   },
   muted: { fontSize: "13.5px", color: "#aaa", margin: 0 },
+  fieldRowSelected: {
+    background: "#fdf4ff",
+  },
+  deleteBar: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    borderRadius: "6px",
+    padding: "7px 12px",
+    marginBottom: "6px",
+  },
+  deleteBarLabel: {
+    flex: 1,
+    fontSize: "12px",
+    fontWeight: "500",
+    color: "#dc2626",
+  },
+  deleteBtn: {
+    background: "#dc2626",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    fontSize: "12px",
+    fontWeight: "600",
+    padding: "4px 14px",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+    flexShrink: 0,
+  },
+  cancelDeleteBtn: {
+    background: "none",
+    border: "none",
+    fontSize: "12px",
+    color: "#888",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+    padding: "4px 6px",
+  },
+  selectIcon: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "13px",
+    padding: "0 0 0 10px",
+    opacity: 0.4,
+    flexShrink: 0,
+    lineHeight: 1,
+  },
+  showMoreBtn: {
+    marginTop: "12px",
+    background: "none",
+    border: "none",
+    color: PURPLE,
+    fontSize: "12.5px",
+    fontWeight: "600",
+    cursor: "pointer",
+    padding: "4px 0",
+    fontFamily: "'Poppins', sans-serif",
+  },
 };
 
 export default AccountPage;

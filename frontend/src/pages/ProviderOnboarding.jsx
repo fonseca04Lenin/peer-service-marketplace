@@ -1,13 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../api';
 
+function resolveMediaUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
 function ProviderOnboarding({ onFinish, onBack }) {
   const [step, setStep] = useState(1);
+  const [maxStepVisited, setMaxStepVisited] = useState(1);
   const [done, setDone] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [returningUser, setReturningUser] = useState(false);
+  const [existingProfilePictureUrl, setExistingProfilePictureUrl] = useState(null);
 
   const [photo, setPhoto] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
   const [tagline, setTagline] = useState('');
 
   const [bio, setBio] = useState('');
@@ -22,11 +31,14 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [serviceDesc, setServiceDesc] = useState('');
   const [serviceArea, setServiceArea] = useState('');
   const [isRemote, setIsRemote] = useState(false);
+  const [serviceImage, setServiceImage] = useState(null);
+  const [serviceImageFile, setServiceImageFile] = useState(null);
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   const photoRef = useRef(null);
+  const serviceImageRef = useRef(null);
 
   useEffect(() => {
     apiFetch('/users/me/')
@@ -34,23 +46,31 @@ function ProviderOnboarding({ onFinish, onBack }) {
       .then(data => {
         if (!data) { setCheckingProfile(false); return; }
 
-        if (data.tagline) setTagline(data.tagline);
-        if (data.bio)     setBio(data.bio);
-        if (data.skills)  setSkills(data.skills.split(',').filter(Boolean));
-
         const hasProfile = data.bio || data.tagline || data.skills;
-        if (hasProfile) {
-          setReturningUser(true);
-          setStep(4);
+        if (hasProfile) setReturningUser(true);
+
+        if (data.profile_picture) {
+          const url = resolveMediaUrl(data.profile_picture);
+          setExistingProfilePictureUrl(url);
+          setPhoto(url);
         }
         setCheckingProfile(false);
       })
       .catch(() => setCheckingProfile(false));
   }, []);
 
+  useEffect(() => () => {
+    if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo);
+    if (serviceImage && serviceImage.startsWith('blob:')) URL.revokeObjectURL(serviceImage);
+  }, [photo, serviceImage]);
+
   const handlePhoto = (e) => {
     const file = e.target.files[0];
-    if (file) setPhoto(URL.createObjectURL(file));
+    if (file) {
+      if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo);
+      setPhoto(URL.createObjectURL(file));
+      setPhotoFile(file);
+    }
   };
 
   const handleSkillKey = (e) => {
@@ -64,52 +84,116 @@ function ProviderOnboarding({ onFinish, onBack }) {
 
   const removeSkill = (s) => setSkills(skills.filter(x => x !== s));
 
-  const goBack = () => step === 1 ? onBack() : setStep(step - 1);
+  const goToStep = (n) => {
+    if (n < 1 || n > 4 || n > maxStepVisited) return;
+    setStep(n);
+    setSaveError('');
+  };
+
+  const goBack = () => (step === 1 ? onBack() : setStep(step - 1));
 
   async function handleFinish() {
     setSaving(true);
     setSaveError('');
     try {
-      await apiFetch('/users/me/', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          bio,
-          tagline,
-          skills: skills.join(','),
-        }),
-      });
+      const profileData = photoFile ? (() => {
+        const fd = new FormData();
+        fd.append('profile_picture', photoFile);
+        fd.append('bio', bio);
+        fd.append('tagline', tagline);
+        fd.append('skills', skills.join(','));
+        return fd;
+      })() : JSON.stringify({ bio, tagline, skills: skills.join(',') });
 
-      if (serviceTitle && servicePrice) {
-        await apiFetch('/services/create/', {
-          method: 'POST',
-          body: JSON.stringify({
-            title: serviceTitle,
-            description: serviceDesc,
-            category: serviceCategory,
-            price: servicePrice,
-            service_area: isRemote ? '' : serviceArea,
-            is_remote: isRemote,
-          }),
-        });
+      const profileRes = await apiFetch('/users/me/', { method: 'PATCH', body: profileData });
+      if (!profileRes.ok) {
+        const err = await profileRes.json();
+        const msg = Object.values(err)[0];
+        throw new Error(Array.isArray(msg) ? msg[0] : String(msg));
+      }
+
+      const svcData = new FormData();
+      svcData.append('title', serviceTitle.trim());
+      svcData.append('description', serviceDesc.trim());
+      svcData.append('category', serviceCategory);
+      svcData.append('price', String(parseFloat(servicePrice)));
+      svcData.append('service_area', isRemote ? '' : serviceArea.trim());
+      svcData.append('is_remote', isRemote ? 'true' : 'false');
+      svcData.append('image', serviceImageFile);
+      const svcRes = await apiFetch('/services/create/', { method: 'POST', body: svcData });
+      if (!svcRes.ok) {
+        const err = await svcRes.json().catch(() => ({}));
+        const first = Object.values(err)[0];
+        const msg = Array.isArray(first) ? first[0] : typeof first === 'object' && first !== null
+          ? JSON.stringify(first)
+          : String(first || svcRes.statusText || 'Could not create service.');
+        throw new Error(msg);
       }
 
       setDone(true);
-    } catch {
-      setSaveError('Something went wrong. Please try again.');
+    } catch (e) {
+      setSaveError(e.message || 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
   }
 
   const goNext = () => {
+    setSaveError('');
+    if (step === 1) {
+      if (!photoFile && !existingProfilePictureUrl) {
+        setSaveError('A profile photo is required.');
+        return;
+      }
+      if (!tagline.trim()) {
+        setSaveError('Please enter a tagline.');
+        return;
+      }
+      setMaxStepVisited((prev) => Math.max(prev, 2));
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (!bio.trim()) {
+        setSaveError('Please enter your bio.');
+        return;
+      }
+      setMaxStepVisited((prev) => Math.max(prev, 3));
+      setStep(3);
+      return;
+    }
+    if (step === 3) {
+      if (skills.length === 0) {
+        setSaveError('Add at least one skill.');
+        return;
+      }
+      setMaxStepVisited((prev) => Math.max(prev, 4));
+      setStep(4);
+      return;
+    }
     if (step === 4) {
       if (!isRemote && !serviceArea.trim()) {
         setSaveError('Please enter a service area or check "This service can be done remotely".');
         return;
       }
+      if (!serviceTitle.trim()) {
+        setSaveError('Please enter a service title.');
+        return;
+      }
+      const priceNum = parseFloat(servicePrice, 10);
+      if (servicePrice.trim() === '' || Number.isNaN(priceNum) || priceNum < 0) {
+        setSaveError('Please enter a valid price (0 or more).');
+        return;
+      }
+      if (!serviceDesc.trim()) {
+        setSaveError('Please enter a description for your service.');
+        return;
+      }
+      if (!serviceImageFile) {
+        setSaveError('Please upload a service photo.');
+        return;
+      }
       handleFinish();
-    } else {
-      setStep(step + 1);
     }
   };
 
@@ -165,27 +249,50 @@ function ProviderOnboarding({ onFinish, onBack }) {
                 {stepLabels.map((label, i) => {
                   const n = i + 1;
                   const isActive = step === n;
-                  const isPast = step > n;
+                  const isPast = n < step;
+                  const isReachableFuture = n > step && n <= maxStepVisited;
+                  const lineLeftDone = n > 1 && maxStepVisited >= n;
+                  const lineRightDone = n < stepLabels.length && maxStepVisited > n;
+                  const clickable = n <= maxStepVisited && n !== step;
+                  const circleStyle = {
+                    ...styles.stepCircle,
+                    background: isPast ? 'rgb(83, 58, 253)' : 'white',
+                    border: isPast
+                      ? 'none'
+                      : isActive
+                        ? '2px solid rgb(83, 58, 253)'
+                        : isReachableFuture
+                          ? '2px solid rgb(83, 58, 253)'
+                          : '2px solid #dde3ea',
+                    color: isPast ? 'white' : isActive ? 'rgb(83, 58, 253)' : isReachableFuture ? 'rgb(83, 58, 253)' : '#bbb',
+                    cursor: clickable ? 'pointer' : 'default',
+                  };
                   return (
                     <div key={n} style={styles.stepItem}>
                       {i > 0 && (
                         <div style={{
                           ...styles.stepLine,
-                          background: isPast || isActive ? 'rgb(83, 58, 253)' : '#e2e8f0',
+                          background: lineLeftDone ? 'rgb(83, 58, 253)' : '#e2e8f0',
                         }} />
                       )}
-                      <div style={{
-                        ...styles.stepCircle,
-                        background: isPast ? 'rgb(83, 58, 253)' : 'white',
-                        border: isPast ? 'none' : isActive ? '2px solid rgb(83, 58, 253)' : '2px solid #dde3ea',
-                        color: isPast ? 'white' : isActive ? 'rgb(83, 58, 253)' : '#bbb',
-                      }}>
+                      <button
+                        type="button"
+                        onClick={() => clickable && goToStep(n)}
+                        style={{
+                          ...circleStyle,
+                          padding: 0,
+                          margin: 0,
+                          font: 'inherit',
+                        }}
+                        aria-label={`Go to step ${n}: ${label}`}
+                        aria-current={isActive ? 'step' : undefined}
+                      >
                         {isPast ? '✓' : n}
-                      </div>
+                      </button>
                       {i < stepLabels.length - 1 && (
                         <div style={{
                           ...styles.stepLine,
-                          background: isPast ? 'rgb(83, 58, 253)' : '#e2e8f0',
+                          background: lineRightDone ? 'rgb(83, 58, 253)' : '#e2e8f0',
                         }} />
                       )}
                     </div>
@@ -195,14 +302,23 @@ function ProviderOnboarding({ onFinish, onBack }) {
               <div style={styles.stepLabelRow}>
                 {stepLabels.map((label, i) => {
                   const n = i + 1;
+                  const clickable = n <= maxStepVisited && n !== step;
                   return (
-                    <span key={n} style={{
-                      ...styles.stepLabel,
-                      color: step === n ? '#0f0620' : '#bbb',
-                      fontWeight: step === n ? '600' : '400',
-                    }}>
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => clickable && goToStep(n)}
+                      style={{
+                        ...styles.stepLabel,
+                        ...styles.stepLabelBtn,
+                        color: step === n ? '#0f0620' : '#bbb',
+                        fontWeight: step === n ? '600' : '400',
+                        cursor: clickable ? 'pointer' : 'default',
+                        opacity: clickable ? 1 : step === n ? 1 : 0.85,
+                      }}
+                    >
                       {label}
-                    </span>
+                    </button>
                   );
                 })}
               </div>
@@ -212,6 +328,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                   <h2 style={styles.stepTitle}>Set up your profile</h2>
                   <p style={styles.stepSub}>This is what people see first. Make it count.</p>
 
+                  <label style={styles.label}>Profile photo <span style={{ color: 'red' }}>*</span></label>
                   <div style={styles.photoWrap}>
                     <div style={styles.photoCircle} onClick={() => photoRef.current.click()}>
                       {photo ? (
@@ -234,7 +351,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     )}
                   </div>
 
-                  <label style={styles.label}>Tagline</label>
+                  <label style={styles.label}>Tagline <span style={{ color: 'red' }}>*</span></label>
                   <input
                     type="text"
                     value={tagline}
@@ -251,7 +368,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                   <h2 style={styles.stepTitle}>Tell your story</h2>
                   <p style={styles.stepSub}>A little context goes a long way with clients.</p>
 
-                  <label style={styles.label}>Bio</label>
+                  <label style={styles.label}>Bio <span style={{ color: 'red' }}>*</span></label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
@@ -268,7 +385,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                   <h2 style={styles.stepTitle}>Your skills</h2>
                   <p style={styles.stepSub}>Be specific — "Python" lands better than "coding".</p>
 
-                  <label style={styles.label}>Skills</label>
+                  <label style={styles.label}>Skills <span style={{ color: 'red' }}>*</span></label>
                   <div style={styles.tagsBox}>
                     {skills.map(s => (
                       <span key={s} style={styles.tag}>
@@ -293,12 +410,12 @@ function ProviderOnboarding({ onFinish, onBack }) {
                   <h2 style={styles.stepTitle}>{returningUser ? 'Add a new listing' : 'Your first listing'}</h2>
                   <p style={styles.stepSub}>
                     {returningUser
-                      ? <>Profile already set up. <span style={{ color: 'rgb(83,58,253)', cursor: 'pointer' }} onClick={() => setStep(1)}>Edit it →</span></>
+                      ? <>Profile already on file — use the steps above to edit earlier sections.</>
                       : 'You can always come back and edit this later.'
                     }
                   </p>
 
-                  <label style={styles.label}>Service title</label>
+                  <label style={styles.label}>Service title <span style={{ color: 'red' }}>*</span></label>
                   <input
                     type="text"
                     value={serviceTitle}
@@ -307,7 +424,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     style={styles.input}
                   />
 
-                  <label style={styles.label}>Category</label>
+                  <label style={styles.label}>Category <span style={{ color: 'red' }}>*</span></label>
                   <select
                     value={serviceCategory}
                     onChange={(e) => setServiceCategory(e.target.value)}
@@ -321,7 +438,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     <option value="other">Other</option>
                   </select>
 
-                  <label style={styles.label}>Rate</label>
+                  <label style={styles.label}>Rate <span style={{ color: 'red' }}>*</span></label>
                   <div style={styles.priceRow}>
                     <span style={styles.dollarSign}>$</span>
                     <input
@@ -348,13 +465,43 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     </div>
                   </div>
 
-                  <label style={styles.label}>Description</label>
+                  <label style={styles.label}>Description <span style={{ color: 'red' }}>*</span></label>
                   <textarea
                     value={serviceDesc}
                     onChange={(e) => setServiceDesc(e.target.value)}
                     placeholder="Describe what you offer, who it's for, and what makes you the right pick..."
                     style={styles.textarea}
                     rows={4}
+                  />
+
+                  <label style={styles.label}>Service photo <span style={{ color: 'red' }}>*</span></label>
+                  <div
+                    style={styles.serviceImageBox}
+                    onClick={() => serviceImageRef.current.click()}
+                  >
+                    {serviceImage ? (
+                      <img src={serviceImage} alt="service" style={styles.serviceImagePreview} />
+                    ) : (
+                      <div style={styles.serviceImageEmpty}>
+                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#ccc" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 20.25h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12.75c0 .828.672 1.5 1.5 1.5z" />
+                        </svg>
+                        <span style={{ fontSize: '12px', color: '#bbb', marginTop: '8px' }}>Click to upload a photo</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={serviceImageRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setServiceImage(URL.createObjectURL(file));
+                        setServiceImageFile(file);
+                      }
+                    }}
                   />
 
                   <div style={styles.remoteRow}>
@@ -371,7 +518,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
 
                   {!isRemote && (
                     <>
-                      <label style={styles.label}>Service area</label>
+                      <label style={styles.label}>Service area <span style={{ color: 'red' }}>*</span></label>
                       <input
                         type="text"
                         value={serviceArea}
@@ -484,6 +631,13 @@ const styles = {
     textAlign: 'center',
     fontSize: '11px',
     letterSpacing: '0.2px',
+  },
+  stepLabelBtn: {
+    background: 'none',
+    border: 'none',
+    padding: '2px 4px',
+    borderRadius: '4px',
+    fontFamily: "'Poppins', sans-serif",
   },
 
   stepTitle: {
@@ -634,6 +788,30 @@ const styles = {
     fontSize: '12px',
     color: '#aaa',
     marginBottom: '4px',
+  },
+  serviceImageBox: {
+    width: '100%',
+    height: '160px',
+    border: '2px dashed #dde3ea',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#fafafa',
+    marginBottom: '20px',
+  },
+  serviceImageEmpty: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceImagePreview: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   remoteRow: {
     marginBottom: '20px',

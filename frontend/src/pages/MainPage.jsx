@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import SearchPage from './SearchPage';
+import ServicePage from './ServicePage';
 import AccountPage from './AccountPage';
 import Dashboard from './Dashboard';
 import BookingsPage from './BookingsPage';
@@ -9,7 +10,7 @@ import SettingsPage from './SettingsPage';
 
 const navItems = ['Dashboard', 'Profile Overview', 'Search Services', 'Bookings', 'Messages', 'Reviews', 'Settings', 'Offer Services'];
 
-function MainPage({ currentUser, onLogout, onStartOnboarding }) {
+function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey = 0 }) {
   const [active, setActive]               = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
 
@@ -62,15 +63,44 @@ function MainPage({ currentUser, onLogout, onStartOnboarding }) {
       </aside>
 
       <main style={s.main}>
-        {active === 'Dashboard' && <Dashboard onSelectService={setSelectedServiceID} onNavigate={setActive} currentUser={currentUser} />}
-        {active === 'Profile Overview' && (
-          <AccountPage currentUser={currentUser} onSelectService={setSelectedServiceID} />
+        {selectedServiceID != null ? (
+          <ServicePage
+            id={selectedServiceID}
+            currentUser={currentUser}
+            onBack={() => setSelectedServiceID(null)}
+            onBooked={() => {
+              setSelectedServiceID(null);
+              setActive('Bookings');
+            }}
+          />
+        ) : (
+          <>
+            {active === 'Dashboard' && (
+              <Dashboard
+                onSelectService={setSelectedServiceID}
+                onNavigate={setActive}
+                onStartOnboarding={onStartOnboarding}
+                currentUser={currentUser}
+                servicesRefreshKey={servicesRefreshKey}
+              />
+            )}
+            {active === 'Profile Overview' && (
+              <AccountPage currentUser={currentUser} onSelectService={setSelectedServiceID} />
+            )}
+            {active === 'Search Services' && (
+              <SearchPage
+                onSelectService={setSelectedServiceID}
+                servicesRefreshKey={servicesRefreshKey}
+                currentUser={currentUser}
+                onNavigate={setActive}
+              />
+            )}
+            {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
+            {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
+            {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
+            {active === 'Settings' && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
+          </>
         )}
-        {active === 'Search Services' && <SearchPage onSelectService={setSelectedServiceID} />}
-        {active === 'Bookings' && <BookingsPage currentUser={currentUser} />}
-        {active === 'Messages' && <MessagesPage currentUser={currentUser} />}
-        {active === 'Reviews' && <ReviewsPage currentUser={currentUser} />}
-        {active === 'Settings' && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
       </main>
 
     </div>

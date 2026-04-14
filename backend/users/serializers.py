@@ -33,6 +33,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+
+    def get_profile_picture(self, obj):
+        if obj.profile_picture:
+            return obj.profile_picture.url
+        return None
+
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name',
@@ -47,4 +54,4 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'role',
                   'bio', 'tagline', 'city', 'country', 'skills',
                   'profile_public', 'messaging_pref',
-                  'phone', 'address', 'date_of_birth']
+                  'phone', 'address', 'date_of_birth', 'profile_picture']

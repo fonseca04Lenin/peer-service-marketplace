@@ -19,7 +19,7 @@ def register(request):
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
-            'user': UserSerializer(user).data,
+            'user': UserSerializer(user, context={'request': request}).data,
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -47,7 +47,7 @@ def login(request):
     token, _ = Token.objects.get_or_create(user=user)
     return Response({
         'token': token.key,
-        'user': UserSerializer(user).data,
+        'user': UserSerializer(user, context={'request': request}).data,
     })
 
 
@@ -62,7 +62,7 @@ def logout(request):
 @permission_classes([IsAuthenticated])
 def me(request):
     if request.method == 'GET':
-        return Response(UserSerializer(request.user).data)
+        return Response(UserSerializer(request.user, context={'request': request}).data)
 
     if request.method == 'DELETE':
         request.user.delete()
@@ -71,5 +71,5 @@ def me(request):
     serializer = UpdateProfileSerializer(request.user, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
-        return Response(UserSerializer(request.user).data)
+        return Response(UserSerializer(request.user, context={'request': request}).data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

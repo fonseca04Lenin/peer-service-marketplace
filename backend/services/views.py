@@ -11,7 +11,7 @@ from .serializers import ServiceSerializer
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def list_services(request):
-    services = Service.objects.filter(is_active=True)
+    services = Service.objects.filter(is_active=True).select_related('provider').order_by('-created_at')
 
     category = request.query_params.get('category')
     if category:
@@ -31,7 +31,7 @@ def list_services(request):
             Q(service_area__icontains=location) | Q(is_remote=True)
         )
 
-    serializer = ServiceSerializer(services, many=True)
+    serializer = ServiceSerializer(services, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -43,14 +43,32 @@ def service_detail(request, pk):
     except Service.DoesNotExist:
         return Response({'error': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response(ServiceSerializer(service).data)
+    return Response(ServiceSerializer(service, context={'request': request}).data)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_service(request):
-    serializer = ServiceSerializer(data=request.data)
+    serializer = ServiceSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
         serializer.save(provider=request.user)
+        if request.user.role != 'provider':
+            request.user.role = 'provider'
+            request.user.save(update_fields=['role'])
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_service(request, pk):
+    try:
+        service = Service.objects.get(pk=pk)
+    except Service.DoesNotExist:
+        return Response({'error': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if service.provider != request.user:
+        return Response({'error': 'Not allowed.'}, status=status.HTTP_403_FORBIDDEN)
+
+    service.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
