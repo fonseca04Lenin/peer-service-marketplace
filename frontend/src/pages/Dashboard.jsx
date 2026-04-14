@@ -358,24 +358,23 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
             ) : messages.length === 0 ? (
               <p style={s.muted}>No messages yet.</p>
             ) : (
-              messages.slice(0, 5).map(m => {
-                const sender = m.sender;
-                const name = sender
-                  ? `${sender.first_name} ${sender.last_name ?? ""}`.trim()
-                  : "Unknown";
-                const unread = !m.is_read;
+              messages.slice(0, 5).map(c => {
+                const u      = c.other_user;
+                const last   = c.last_message;
+                const name   = u ? `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.username : "Unknown";
+                const unread = c.unread_count > 0;
                 return (
-                  <div key={m.id} style={{ ...s.row, gap: "10px", cursor: "pointer" }} onClick={() => onNavigate?.("Messages")}>
-                    <Avatar name={name} src={sender?.profile_picture} size={32} />
+                  <div key={u?.id} style={{ ...s.row, gap: "10px", cursor: "pointer" }} onClick={() => onNavigate?.("Messages")}>
+                    <Avatar name={name} src={u?.profile_picture} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1px" }}>
                         <span style={{ fontSize: "12.5px", fontWeight: unread ? "700" : "600", color: DARK }}>
                           {name}
                         </span>
-                        <span style={{ fontSize: "10.5px", color: "#ccc" }}>{formatTimeAgo(m.created_at)}</span>
+                        <span style={{ fontSize: "10.5px", color: "#ccc" }}>{formatTimeAgo(last?.created_at)}</span>
                       </div>
                       <p style={{ fontSize: "12px", color: unread ? "#555" : "#bbb", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {m.body}
+                        {last?.body || ""}
                       </p>
                     </div>
                     {unread && <span style={s.unreadDot} />}
