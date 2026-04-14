@@ -4,12 +4,15 @@ from django.db import models
 
 class Service(models.Model):
     CATEGORY_CHOICES = [
-        ('tutoring', 'Tutoring'),
-        ('handyman', 'Handyman'),
-        ('tech', 'Tech Help'),
-        ('creative', 'Creative Services'),
-        ('home', 'Home Assistance'),
+        ('tech_services', 'Tech Services'),
+        ('creative_services', 'Creative Services'),
+        ('home_services', 'Home Services'),
+        ('education', 'Education'),
+        ('health_wellness', 'Health & Wellness'),
+        ('financial_services', 'Financial Services'),
+        ('business_services', 'Business Services'),
         ('other', 'Other'),
+
     ]
 
     provider = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='services')
