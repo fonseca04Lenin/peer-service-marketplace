@@ -3,17 +3,14 @@ import { apiFetch } from "../api";
 import ServicePage from "./ServicePage";
 
 const POPULAR_CATEGORIES = [
-  { label: "Web Development",   color: "#C0143C" },
-  { label: "Graphic Design",    color: "#9B1D6A" },
-  { label: "Video Editing",     color: "#7B1FA2" },
-  { label: "Photography",       color: "#C62828" },
-  { label: "Writing",           color: "#AD1457" },
-  { label: "Math Help",         color: "#8E0038" },
-  { label: "Music Lessons",     color: "#6A1B9A" },
-  { label: "Handyman",          color: "#B71C1C" },
-  { label: "Moving Help",       color: "#880E4F" },
-  { label: "Language Tutoring", color: "#A0196A" },
-  { label: "Resume Review",     color: "#C2185B" },
+  { label: "Tech Services",      value: "tech_services",      color: "rgb(83,58,253)" },
+  { label: "Creative Services",  value: "creative_services",  color: "#7B1FA2" },
+  { label: "Home Services",      value: "home_services",      color: "#0f0620" },
+  { label: "Education",          value: "education",          color: "#047857" },
+  { label: "Health & Wellness",  value: "health_wellness",    color: "#b45309" },
+  { label: "Financial Services", value: "financial_services", color: "#0369a1" },
+  { label: "Business Services",  value: "business_services",  color: "#be123c" },
+  { label: "Other",              value: "other",              color: "#6b7280" },
 ];
 
 function matchesQuery(service, q) {
@@ -103,7 +100,7 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
                   border: `1.5px solid ${cat.color}`,
                   background: "white",
                 }}
-                onClick={() => setQuery(cat.label)}
+                onClick={() => setQuery(cat.value)}
               >
                 {cat.label}
               </button>
