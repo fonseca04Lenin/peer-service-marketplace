@@ -19,7 +19,9 @@ def list_services(request):
 
     keyword = request.query_params.get('q')
     if keyword:
-        services = services.filter(title__icontains=keyword)
+        services = services.filter(
+            Q(title__icontains=keyword) | Q(description__icontains=keyword)
+        )
 
     provider_id = request.query_params.get('provider')
     if provider_id:

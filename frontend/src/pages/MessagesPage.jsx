@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { apiFetch } from "../api";
-
-const PURPLE      = "rgb(83, 58, 253)";
-const PURPLE_SOFT = "#ede9fe";
-const DARK        = "#0f0620";
+import { colors } from "../constants";
 
 function displayName(u) {
   if (!u) return "Unknown";
@@ -56,7 +53,7 @@ function Avatar({ user, size = 36 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: "50%",
-      background: "linear-gradient(135deg, rgb(83,58,253), #c4b5fd)",
+      background: `linear-gradient(135deg, ${colors.purple}, ${colors.gradientEnd})`,
       color: "white", fontWeight: "700",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.33, flexShrink: 0,
@@ -96,6 +93,38 @@ function MessagesPage({ currentUser }) {
     if (!currentUser) return;
     loadConversations();
   }, [currentUser, loadConversations]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const id = setInterval(loadConversations, 6000);
+    return () => clearInterval(id);
+  }, [currentUser, loadConversations]);
+
+  useEffect(() => {
+    if (!activeUserId) return;
+    const id = setInterval(() => {
+      apiFetch(`/messaging/${activeUserId}/`)
+        .then(r => (r.ok ? r.json() : null))
+        .then(data => {
+          if (!Array.isArray(data)) return;
+          setMessages(prev => {
+            const noChange =
+              data.length === prev.length &&
+              (data.length === 0 || data[data.length - 1].id === prev[prev.length - 1].id);
+            return noChange ? prev : data;
+          });
+          setConversations(prev => {
+            const convo = prev.find(c => c.other_user?.id === activeUserId);
+            if (!convo || convo.unread_count === 0) return prev;
+            return prev.map(c =>
+              c.other_user?.id === activeUserId ? { ...c, unread_count: 0 } : c
+            );
+          });
+        })
+        .catch(() => {});
+    }, 3000);
+    return () => clearInterval(id);
+  }, [activeUserId]);
 
   function openConversation(userId) {
     if (userId === activeUserId) return;
@@ -177,7 +206,7 @@ function MessagesPage({ currentUser }) {
           <p style={s.muted}>Loading…</p>
         ) : conversations.length === 0 ? (
           <div style={s.emptyConvos}>
-            <p style={{ fontSize: "13px", fontWeight: "600", color: DARK, margin: "0 0 6px" }}>
+            <p style={{ fontSize: "13px", fontWeight: "600", color: colors.dark, margin: "0 0 6px" }}>
               No conversations yet
             </p>
             <p style={s.muted}>
@@ -205,7 +234,7 @@ function MessagesPage({ currentUser }) {
                       <span style={{
                         fontSize: "13px",
                         fontWeight: c.unread_count > 0 ? "700" : "600",
-                        color: DARK,
+                        color: colors.dark,
                       }}>
                         {displayName(u)}
                       </span>
@@ -239,7 +268,7 @@ function MessagesPage({ currentUser }) {
 
           <div style={s.selectPrompt}>
             <div style={s.selectIcon}>✉</div>
-            <p style={{ fontSize: "15px", fontWeight: "600", color: DARK, margin: "0 0 6px" }}>
+            <p style={{ fontSize: "15px", fontWeight: "600", color: colors.dark, margin: "0 0 6px" }}>
               Pick a conversation
             </p>
             <p style={s.muted}>Select a chat on the left to read and reply.</p>
@@ -372,7 +401,7 @@ const s = {
     height: "100%",
     fontFamily: "'Poppins', sans-serif",
     overflow: "hidden",
-    background: "#f7f6ff",
+    background: colors.pageBg,
   },
 
   sidebar: {
@@ -381,12 +410,12 @@ const s = {
     display: "flex",
     flexDirection: "column",
     background: "white",
-    borderRight: "1px solid #ede9fe",
+    borderRight: `1px solid ${colors.border}`,
     overflowY: "auto",
   },
   sideHeader: {
     padding: "22px 20px 14px",
-    borderBottom: "1px solid #ede9fe",
+    borderBottom: `1px solid ${colors.border}`,
     position: "sticky",
     top: 0,
     background: "white",
@@ -395,7 +424,7 @@ const s = {
   sideTitle: {
     fontSize: "16px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     margin: 0,
   },
   convoList: {
@@ -412,14 +441,14 @@ const s = {
     transition: "background 0.15s",
   },
   convoCardActive: {
-    background: PURPLE_SOFT,
+    background: colors.border,
   },
   unreadBadge: {
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     fontSize: "10px",
     fontWeight: "700",
-    borderRadius: "10px",
+    borderRadius: 0,
     padding: "2px 7px",
     flexShrink: 0,
   },
@@ -440,13 +469,13 @@ const s = {
     gap: "12px",
     padding: "16px 22px",
     background: "white",
-    borderBottom: "1px solid #ede9fe",
+    borderBottom: `1px solid ${colors.border}`,
     flexShrink: 0,
   },
   chatName: {
     fontSize: "14px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     margin: 0,
   },
   chatSub: {
@@ -463,7 +492,7 @@ const s = {
     padding: "12px 14px",
     background: "#fffbeb",
     border: "1px solid #fde68a",
-    borderRadius: "10px",
+    borderRadius: "4px",
     flexShrink: 0,
   },
   safetyIcon: {
@@ -512,8 +541,8 @@ const s = {
     color: "#ccc",
     background: "#faf9ff",
     padding: "2px 12px",
-    borderRadius: "20px",
-    border: "1px solid #ede9fe",
+    borderRadius: 0,
+    border: `1px solid ${colors.border}`,
   },
 
   bubbleRow: {
@@ -525,20 +554,18 @@ const s = {
     padding: "9px 13px",
     fontSize: "13.5px",
     lineHeight: 1.5,
-    borderRadius: "16px",
+    borderRadius: "4px",
     wordBreak: "break-word",
     whiteSpace: "pre-wrap",
   },
   bubbleMine: {
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
-    borderBottomRightRadius: "4px",
   },
   bubbleTheirs: {
     background: "white",
-    color: DARK,
-    border: "1px solid #ede9fe",
-    borderBottomLeftRadius: "4px",
+    color: colors.dark,
+    border: `1px solid ${colors.border}`,
   },
   bubbleTime: {
     fontSize: "10px",
@@ -549,7 +576,7 @@ const s = {
   inputArea: {
     padding: "12px 20px 16px",
     background: "white",
-    borderTop: "1px solid #ede9fe",
+    borderTop: `1px solid ${colors.border}`,
     flexShrink: 0,
   },
   inputRow: {
@@ -560,12 +587,12 @@ const s = {
   textarea: {
     flex: 1,
     resize: "none",
-    border: "1px solid #ede9fe",
-    borderRadius: "10px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "10px 14px",
     fontSize: "13.5px",
     fontFamily: "'Poppins', sans-serif",
-    color: DARK,
+    color: colors.dark,
     background: "#faf9ff",
     outline: "none",
     lineHeight: 1.5,
@@ -573,10 +600,10 @@ const s = {
     overflowY: "auto",
   },
   sendBtn: {
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "4px",
     padding: "10px 20px",
     fontSize: "13px",
     fontWeight: "600",

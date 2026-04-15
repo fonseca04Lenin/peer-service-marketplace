@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../api";
-
-const PURPLE = "rgb(83, 58, 253)";
-const PURPLE_SOFT = "#f0eeff";
+import { colors } from "../constants";
 
 const STATUS_STYLE = {
   pending: { bg: "#fffbeb", color: "#b45309", border: "#fde68a", label: "Pending" },
   confirmed: { bg: "#ecfdf5", color: "#047857", border: "#a7f3d0", label: "Confirmed" },
-  completed: { bg: PURPLE_SOFT, color: PURPLE, border: "#d4c8ff", label: "Completed" },
+  completed: { bg: colors.purpleSoft, color: colors.purple, border: "#d4c8ff", label: "Completed" },
   cancelled: { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
 };
 
@@ -23,11 +21,11 @@ function formatWhen(iso) {
   });
 }
 
-function BookingsPage({ currentUser }) {
+function BookingsPage({ currentUser, onPay }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [tab, setTab] = useState("client"); // client | provider
+  const [tab, setTab] = useState("client"); 
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionId, setActionId] = useState(null);
 
@@ -230,6 +228,16 @@ function BookingsPage({ currentUser }) {
                     >
                       Cancel booking
                     </button>
+                    {onPay && (
+                      <button
+                        type="button"
+                        style={s.btnPay}
+                        disabled={busy}
+                        onClick={() => onPay(b)}
+                      >
+                        Pay now
+                      </button>
+                    )}
                   </div>
                 )}
               </article>
@@ -245,7 +253,7 @@ const s = {
   page: {
     padding: "32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     boxSizing: "border-box",
   },
@@ -257,7 +265,7 @@ const s = {
     fontSize: "22px",
     fontWeight: "700",
     margin: "0 0 8px",
-    color: "#0f0620",
+    color: colors.dark,
   },
   sub: {
     fontSize: "13px",
@@ -276,8 +284,8 @@ const s = {
   },
   tab: {
     padding: "10px 18px",
-    borderRadius: "10px",
-    border: "1px solid #ede9fe",
+    borderRadius: "4px",
+    border: `1px solid ${colors.border}`,
     background: "white",
     fontSize: "13px",
     fontWeight: "600",
@@ -286,9 +294,9 @@ const s = {
     fontFamily: "'Poppins', sans-serif",
   },
   tabOn: {
-    border: `1px solid ${PURPLE}`,
-    color: PURPLE,
-    background: PURPLE_SOFT,
+    border: `1px solid ${colors.purple}`,
+    color: colors.purple,
+    background: colors.purpleSoft,
   },
   filters: {
     display: "flex",
@@ -298,8 +306,8 @@ const s = {
   },
   chip: {
     padding: "6px 12px",
-    borderRadius: "20px",
-    border: "1px solid #ede9fe",
+    borderRadius: 0,
+    border: `1px solid ${colors.border}`,
     background: "white",
     fontSize: "11px",
     fontWeight: "600",
@@ -308,9 +316,9 @@ const s = {
     fontFamily: "'Poppins', sans-serif",
   },
   chipOn: {
-    border: `1px solid ${PURPLE}`,
-    color: PURPLE,
-    background: PURPLE_SOFT,
+    border: `1px solid ${colors.purple}`,
+    color: colors.purple,
+    background: colors.purpleSoft,
   },
   grid: {
     display: "flex",
@@ -320,8 +328,8 @@ const s = {
   },
   card: {
     background: "white",
-    borderRadius: "12px",
-    border: "1px solid #ede9fe",
+    borderRadius: "4px",
+    border: `1px solid ${colors.border}`,
     padding: "20px 22px",
   },
   cardTop: {
@@ -334,7 +342,7 @@ const s = {
   cardTitle: {
     fontSize: "16px",
     fontWeight: "700",
-    color: "#0f0620",
+    color: colors.dark,
     margin: "0 0 4px",
   },
   meta: {
@@ -346,7 +354,7 @@ const s = {
     fontSize: "11px",
     fontWeight: "700",
     padding: "4px 10px",
-    borderRadius: "20px",
+    borderRadius: 0,
     border: "1px solid",
     flexShrink: 0,
   },
@@ -356,7 +364,7 @@ const s = {
     gap: "2px",
     padding: "12px 14px",
     background: "#faf9ff",
-    borderRadius: "10px",
+    borderRadius: "4px",
     marginBottom: "10px",
   },
   whenLabel: {
@@ -369,7 +377,7 @@ const s = {
   whenVal: {
     fontSize: "15px",
     fontWeight: "600",
-    color: "#0f0620",
+    color: colors.dark,
   },
   notes: {
     fontSize: "13px",
@@ -385,9 +393,9 @@ const s = {
   },
   btnConfirm: {
     padding: "8px 16px",
-    borderRadius: "8px",
+    borderRadius: "4px",
     border: "none",
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     fontSize: "12px",
     fontWeight: "600",
@@ -396,10 +404,21 @@ const s = {
   },
   btnDecline: {
     padding: "8px 16px",
-    borderRadius: "8px",
-    border: `1px solid ${PURPLE}`,
+    borderRadius: "4px",
+    border: `1px solid ${colors.purple}`,
     background: "white",
-    color: PURPLE,
+    color: colors.purple,
+    fontSize: "12px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+  },
+  btnPay: {
+    padding: "8px 20px",
+    borderRadius: "4px",
+    border: "none",
+    background: colors.purple,
+    color: "white",
     fontSize: "12px",
     fontWeight: "600",
     cursor: "pointer",
@@ -408,14 +427,14 @@ const s = {
   empty: {
     padding: "28px",
     background: "white",
-    borderRadius: "12px",
+    borderRadius: "4px",
     border: "1px dashed #ddd6fe",
     maxWidth: "520px",
   },
   emptyTitle: {
     fontSize: "15px",
     fontWeight: "600",
-    color: "#0f0620",
+    color: colors.dark,
     margin: "0 0 8px",
   },
   muted: {

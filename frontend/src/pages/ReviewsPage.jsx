@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { colors } from "../constants";
 
 function ReviewsPage({ currentUser }) {
     const [reviews, setReviews] = useState([]);
@@ -59,7 +60,7 @@ const s = {
   page: {
     padding: "32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
   },
   loading: {
@@ -70,7 +71,7 @@ const s = {
     fontSize: "28px",
     fontWeight: "700",
     marginBottom: "24px",
-    color: "#0f0620",
+    color: colors.dark,
   },
   results: {
     display: "grid",
@@ -80,7 +81,7 @@ const s = {
   card: {
     background: "white",
     padding: "20px",
-    borderRadius: "12px",
+    borderRadius: "4px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     transition: "transform 0.2s",
     cursor: "default",
@@ -89,12 +90,12 @@ const s = {
     margin: "0 0 12px 0",
     fontSize: "18px",
     fontWeight: "600",
-    color: "#0f0620",
+    color: colors.dark,
   },
   cardRating: {
     fontSize: "14px",
     fontWeight: "600",
-    color: "#0f0620",
+    color: colors.dark,
     marginBottom: "8px",
   },
   cardDescription: {

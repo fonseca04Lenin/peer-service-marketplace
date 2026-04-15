@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../api';
+import { colors } from '../constants';
 
 function resolveMediaUrl(path) {
   if (!path) return null;
@@ -256,15 +257,15 @@ function ProviderOnboarding({ onFinish, onBack }) {
                   const clickable = n <= maxStepVisited && n !== step;
                   const circleStyle = {
                     ...styles.stepCircle,
-                    background: isPast ? 'rgb(83, 58, 253)' : 'white',
+                    background: isPast ? colors.purple : 'white',
                     border: isPast
                       ? 'none'
                       : isActive
-                        ? '2px solid rgb(83, 58, 253)'
+                        ? `2px solid ${colors.purple}`
                         : isReachableFuture
-                          ? '2px solid rgb(83, 58, 253)'
+                          ? `2px solid ${colors.purple}`
                           : '2px solid #dde3ea',
-                    color: isPast ? 'white' : isActive ? 'rgb(83, 58, 253)' : isReachableFuture ? 'rgb(83, 58, 253)' : '#bbb',
+                    color: isPast ? 'white' : isActive ? colors.purple : isReachableFuture ? colors.purple : colors.muted,
                     cursor: clickable ? 'pointer' : 'default',
                   };
                   return (
@@ -272,7 +273,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                       {i > 0 && (
                         <div style={{
                           ...styles.stepLine,
-                          background: lineLeftDone ? 'rgb(83, 58, 253)' : '#e2e8f0',
+                          background: lineLeftDone ? colors.purple : '#e2e8f0',
                         }} />
                       )}
                       <button
@@ -292,7 +293,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                       {i < stepLabels.length - 1 && (
                         <div style={{
                           ...styles.stepLine,
-                          background: lineRightDone ? 'rgb(83, 58, 253)' : '#e2e8f0',
+                          background: lineRightDone ? colors.purple : '#e2e8f0',
                         }} />
                       )}
                     </div>
@@ -311,7 +312,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                       style={{
                         ...styles.stepLabel,
                         ...styles.stepLabelBtn,
-                        color: step === n ? '#0f0620' : '#bbb',
+                        color: step === n ? colors.dark : colors.muted,
                         fontWeight: step === n ? '600' : '400',
                         cursor: clickable ? 'pointer' : 'default',
                         opacity: clickable ? 1 : step === n ? 1 : 0.85,
@@ -510,7 +511,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
                         type="checkbox"
                         checked={isRemote}
                         onChange={(e) => setIsRemote(e.target.checked)}
-                        style={{ marginRight: '8px', accentColor: 'rgb(83, 58, 253)' }}
+                        style={{ marginRight: '8px', accentColor: colors.purple }}
                       />
                       This service can be done remotely
                     </label>
@@ -561,7 +562,7 @@ const styles = {
   nav: {
     padding: '0 48px',
     height: '60px',
-    background: '#0f0620',
+    background: colors.dark,
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
@@ -588,7 +589,7 @@ const styles = {
   card: {
     background: 'white',
     padding: '52px',
-    borderRadius: '12px',
+    borderRadius: '4px',
     width: '560px',
     boxShadow: '0 8px 48px rgba(0,0,0,0.28)',
     marginBottom: '24px',
@@ -613,7 +614,7 @@ const styles = {
   stepCircle: {
     width: 28,
     height: 28,
-    borderRadius: '50%',
+    borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -643,7 +644,7 @@ const styles = {
   stepTitle: {
     fontSize: '22px',
     fontWeight: '700',
-    color: '#0f0620',
+    color: colors.dark,
     margin: '0 0 8px 0',
   },
   stepSub: {
@@ -685,7 +686,7 @@ const styles = {
   changePhotoBtn: {
     background: 'none',
     border: 'none',
-    color: 'rgb(83, 58, 253)',
+    color: colors.purple,
     fontSize: '13px',
     cursor: 'pointer',
     fontFamily: "'Poppins', sans-serif",
@@ -711,10 +712,10 @@ const styles = {
     marginBottom: '20px',
     boxSizing: 'border-box',
     border: '1px solid #dde3ea',
-    borderRadius: '6px',
+    borderRadius: '4px',
     fontSize: '15px',
     outline: 'none',
-    color: '#0f0620',
+    color: colors.dark,
     fontFamily: "'Poppins', sans-serif",
   },
   charCount: {
@@ -731,10 +732,10 @@ const styles = {
     marginBottom: '20px',
     boxSizing: 'border-box',
     border: '1px solid #dde3ea',
-    borderRadius: '6px',
+    borderRadius: '4px',
     fontSize: '15px',
     outline: 'none',
-    color: '#0f0620',
+    color: colors.dark,
     fontFamily: "'Poppins', sans-serif",
     resize: 'vertical',
     lineHeight: '1.6',
@@ -745,7 +746,7 @@ const styles = {
     flexWrap: 'wrap',
     gap: '8px',
     border: '1px solid #dde3ea',
-    borderRadius: '6px',
+    borderRadius: '4px',
     padding: '10px',
     minHeight: '52px',
     alignItems: 'center',
@@ -756,10 +757,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    background: '#f0eeff',
-    color: 'rgb(83, 58, 253)',
+    background: colors.purpleSoft,
+    color: colors.purple,
     border: '1px solid #d4c8ff',
-    borderRadius: '20px',
+    borderRadius: 0,
     padding: '4px 10px 4px 12px',
     fontSize: '13px',
     fontWeight: '500',
@@ -767,7 +768,7 @@ const styles = {
   tagX: {
     background: 'none',
     border: 'none',
-    color: 'rgb(83, 58, 253)',
+    color: colors.purple,
     cursor: 'pointer',
     fontSize: '16px',
     lineHeight: '1',
@@ -780,7 +781,7 @@ const styles = {
     outline: 'none',
     fontSize: '14px',
     fontFamily: "'Poppins', sans-serif",
-    color: '#0f0620',
+    color: colors.dark,
     flex: 1,
     minWidth: '120px',
   },
@@ -793,7 +794,7 @@ const styles = {
     width: '100%',
     height: '160px',
     border: '2px dashed #dde3ea',
-    borderRadius: '8px',
+    borderRadius: '4px',
     cursor: 'pointer',
     overflow: 'hidden',
     display: 'flex',
@@ -830,10 +831,10 @@ const styles = {
     padding: '12px 14px',
     marginBottom: '20px',
     border: '1px solid #dde3ea',
-    borderRadius: '6px',
+    borderRadius: '4px',
     fontSize: '15px',
     outline: 'none',
-    color: '#0f0620',
+    color: colors.dark,
     fontFamily: "'Poppins', sans-serif",
     background: 'white',
     cursor: 'pointer',
@@ -846,7 +847,7 @@ const styles = {
     gap: '4px',
     marginBottom: '20px',
     border: '1px solid #dde3ea',
-    borderRadius: '6px',
+    borderRadius: '4px',
     paddingLeft: '14px',
     overflow: 'hidden',
   },
@@ -862,7 +863,7 @@ const styles = {
     fontSize: '15px',
     padding: '12px 8px',
     fontFamily: "'Poppins', sans-serif",
-    color: '#0f0620',
+    color: colors.dark,
   },
   rateToggle: {
     display: 'flex',
@@ -881,12 +882,12 @@ const styles = {
   },
   rateActive: {
     padding: '0 14px',
-    background: '#f0eeff',
+    background: colors.purpleSoft,
     border: 'none',
     borderLeft: '1px solid #dde3ea',
     cursor: 'pointer',
     fontSize: '13px',
-    color: 'rgb(83, 58, 253)',
+    color: colors.purple,
     fontWeight: '600',
     fontFamily: "'Poppins', sans-serif",
     height: '100%',
@@ -910,10 +911,10 @@ const styles = {
   },
   continueBtn: {
     padding: '13px 28px',
-    background: 'rgb(83, 58, 253)',
+    background: colors.purple,
     color: 'white',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '15px',
     fontWeight: '600',
@@ -930,9 +931,9 @@ const styles = {
   doneCheck: {
     width: 64,
     height: 64,
-    borderRadius: '50%',
-    background: '#f0eeff',
-    color: 'rgb(83, 58, 253)',
+    borderRadius: '4px',
+    background: colors.purpleSoft,
+    color: colors.purple,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -943,7 +944,7 @@ const styles = {
   doneTitle: {
     fontSize: '24px',
     fontWeight: '700',
-    color: '#0f0620',
+    color: colors.dark,
     marginBottom: '12px',
   },
   doneSub: {

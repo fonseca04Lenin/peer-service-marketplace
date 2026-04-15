@@ -7,6 +7,7 @@ from rest_framework import status
 
 from .models import Message
 from .serializers import MessageSerializer, MessageUserSerializer
+from bookings.models import Booking
 
 User = get_user_model()
 
@@ -73,6 +74,17 @@ def conversation_detail(request, user_id):
         ).update(is_read=True)
 
         return Response(MessageSerializer(msgs, many=True, context={'request': request}).data)
+
+    if other.messaging_pref == 'booked_only':
+        shared_booking = Booking.objects.filter(
+            db_models.Q(requester=me, service__provider=other) |
+            db_models.Q(requester=other, service__provider=me)
+        ).exists()
+        if not shared_booking:
+            return Response(
+                {'error': 'This user only accepts messages from people they have a booking with.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
     body = request.data.get('body', '').strip()
     if not body:
