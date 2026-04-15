@@ -7,8 +7,9 @@ import BookingsPage from './BookingsPage';
 import MessagesPage from './MessagesPage';
 import ReviewsPage from './ReviewsPage';
 import SettingsPage from './SettingsPage';
-
-const DARK = '#0f0620';
+import PaymentPage from './PaymentPage';
+import WalletPage from './WalletPage';
+import { colors } from '../constants';
 
 const navItems = [
   { label: 'Dashboard', key: 'Dashboard' },
@@ -21,6 +22,7 @@ const navItems = [
 function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey = 0 }) {
   const [active, setActive]                       = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
+  const [payingBooking, setPayingBooking]         = useState(null);
   const [menuOpen, setMenuOpen]                   = useState(false);
   const menuRef                                   = useRef(null);
 
@@ -47,6 +49,7 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
 
   function navigate(key) {
     setSelectedServiceID(null);
+    setPayingBooking(null);
     setActive(key);
   }
 
@@ -57,7 +60,7 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
 
         <div style={s.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
-          <span style={{ color: 'rgb(167,139,250)' }}>·</span>
+          <span style={{ color: colors.violet }}>·</span>
           <span style={{ fontWeight: 700 }}>market</span>
         </div>
 
@@ -99,6 +102,9 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
                 <button style={s.dropItem} onClick={() => { navigate('Settings'); setMenuOpen(false); }}>
                   Settings
                 </button>
+                <button style={s.dropItem} onClick={() => { navigate('Wallet'); setMenuOpen(false); }}>
+                  Wallet
+                </button>
                 <div style={s.dropDivider} />
                 <button style={{ ...s.dropItem, color: '#ef4444' }} onClick={() => { setMenuOpen(false); onLogout?.(); }}>
                   Sign out
@@ -120,6 +126,13 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
               setSelectedServiceID(null);
               setActive('Bookings');
             }}
+          />
+        ) : payingBooking != null ? (
+          <PaymentPage
+            booking={payingBooking}
+            onSuccess={() => { setPayingBooking(null); setActive('Bookings'); }}
+            onCancel={() => setPayingBooking(null)}
+            onAddFunds={() => { setPayingBooking(null); setActive('Wallet'); }}
           />
         ) : (
           <>
@@ -143,10 +156,11 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
                 onNavigate={setActive}
               />
             )}
-            {active === 'Bookings'  && <BookingsPage currentUser={currentUser} />}
+            {active === 'Bookings'  && <BookingsPage currentUser={currentUser} onPay={setPayingBooking} />}
             {active === 'Messages'  && <MessagesPage currentUser={currentUser} />}
             {active === 'Reviews'   && <ReviewsPage  currentUser={currentUser} />}
             {active === 'Settings'  && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
+            {active === 'Wallet'    && <WalletPage />}
           </>
         )}
       </main>
@@ -166,7 +180,7 @@ const s = {
 
   nav: {
     height: '54px',
-    background: DARK,
+    background: colors.dark,
     display: 'flex',
     alignItems: 'center',
     gap: '0',
@@ -225,7 +239,7 @@ const s = {
     width: '18px',
     height: '2px',
     borderRadius: '2px 2px 0 0',
-    background: 'rgb(167,139,250)',
+    background: colors.violet,
   },
 
   rightSlot: {
@@ -237,9 +251,9 @@ const s = {
 
   offerBtn: {
     background: 'none',
-    border: '1px solid rgba(167,139,250,0.45)',
-    borderRadius: '8px',
-    color: 'rgb(167,139,250)',
+    border: `1px solid ${colors.violetBorder}`,
+    borderRadius: '4px',
+    color: colors.violet,
     fontSize: '12px',
     fontWeight: '600',
     padding: '6px 14px',
@@ -265,7 +279,7 @@ const s = {
     width: 28,
     height: 28,
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, rgb(83,58,253), #c4b5fd)',
+    background: `linear-gradient(135deg, ${colors.purple}, ${colors.gradientEnd})`,
     color: 'white',
     fontSize: '10px',
     fontWeight: '700',
@@ -304,8 +318,8 @@ const s = {
     top: 'calc(100% + 8px)',
     right: 0,
     background: 'white',
-    border: '1px solid #ede9fe',
-    borderRadius: '10px',
+    border: `1px solid ${colors.border}`,
+    borderRadius: '4px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
     minWidth: '150px',
     zIndex: 100,
@@ -320,7 +334,7 @@ const s = {
     padding: '11px 16px',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#0f0620',
+    color: colors.dark,
     cursor: 'pointer',
     fontFamily: "'Poppins', sans-serif",
     textAlign: 'left',
@@ -328,13 +342,13 @@ const s = {
 
   dropDivider: {
     height: '1px',
-    background: '#ede9fe',
+    background: colors.border,
     margin: '0',
   },
 
   main: {
     flex: 1,
-    background: '#f7f6ff',
+    background: colors.pageBg,
     overflowY: 'auto',
   },
 };

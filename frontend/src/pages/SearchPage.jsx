@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
+import { colors } from "../constants";
 import ServicePage from "./ServicePage";
 
 const POPULAR_CATEGORIES = [
-  { label: "Tech Services",      value: "tech_services",      color: "rgb(83,58,253)" },
+  { label: "Tech Services",      value: "tech_services",      color: colors.purple },
   { label: "Creative Services",  value: "creative_services",  color: "#7B1FA2" },
-  { label: "Home Services",      value: "home_services",      color: "#0f0620" },
+  { label: "Home Services",      value: "home_services",      color: colors.dark },
   { label: "Education",          value: "education",          color: "#047857" },
   { label: "Health & Wellness",  value: "health_wellness",    color: "#b45309" },
   { label: "Financial Services", value: "financial_services", color: "#0369a1" },
@@ -13,21 +14,13 @@ const POPULAR_CATEGORIES = [
   { label: "Other",              value: "other",              color: "#6b7280" },
 ];
 
-function matchesQuery(service, q) {
-  if (!q.trim()) return true;
-  const needle = q.trim().toLowerCase();
-  const title = (service.title || "").toLowerCase();
-  const desc = (service.description || "").toLowerCase();
-  const cat = (service.category || "").toLowerCase();
-  return title.includes(needle) || desc.includes(needle) || cat.includes(needle);
-}
-
 function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNavigate }) {
-  const [services, setServices] = useState([]);
-  const [selectedId, setSelectedId] = useState(null)
-  const [query, setQuery]       = useState("");
-  const [location, setLocation] = useState("");
-  const [loading, setLoading]   = useState(true);
+  const [services,        setServices]        = useState([]);
+  const [selectedId,      setSelectedId]      = useState(null);
+  const [query,           setQuery]           = useState("");
+  const [location,        setLocation]        = useState("");
+  const [activeCategory,  setActiveCategory]  = useState(null);
+  const [loading,         setLoading]         = useState(true);
 
   const debounceRef = useRef(null);
 
@@ -36,21 +29,25 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
     debounceRef.current = setTimeout(() => {
       setLoading(true);
       const params = new URLSearchParams();
-      if (location.trim()) params.set("location", location.trim());
-      const qs = params.toString();
+      if (query.trim())        params.set("q",        query.trim());
+      if (activeCategory)      params.set("category", activeCategory);
+      if (location.trim())     params.set("location", location.trim());
+      const qs   = params.toString() ;
       const path = qs ? `/services/?${qs}` : "/services/";
       apiFetch(path)
-        .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-        .then((data) => setServices(Array.isArray(data) ? data : []))
+        .then(res => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+        .then(data => setServices(Array.isArray(data) ? data : []))
         .catch(() => setServices([]))
         .finally(() => setLoading(false));
     }, 400);
     return () => clearTimeout(debounceRef.current);
-  }, [location, servicesRefreshKey]);
+  }, [query, location, activeCategory, servicesRefreshKey]);
+  function toggleCategory(value) {
+    setActiveCategory(prev => (prev === value ? null : value)) ;
+  }
 
-  const filteredServices = services.filter((service) => matchesQuery(service, query));
-
-  const showCategories = query.trim() === "";
+  const activeCategoryMeta = POPULAR_CATEGORIES.find(c => c.value === activeCategory);
+  const showCategoryGrid = query.trim() === "";
 
   if (selectedId) {
     return (
@@ -60,7 +57,7 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
         onBack={() => setSelectedId(null)}
         onBooked={() => {
           setSelectedId(null);
-          onNavigate?.('Bookings');
+          onNavigate?.("Bookings");
         }}
       />
     );
@@ -87,24 +84,46 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
         />
       </div>
 
-      {showCategories && (
+      {activeCategory && (
+        <div style={s.activeCatRow}>
+          <span style={s.activeCatLabel}>Category:</span>
+          <span
+            style={{
+              ...s.activeCatChip,
+              color:      activeCategoryMeta?.color || "#555",
+              background: (activeCategoryMeta?.color || "#555") + "18",
+              border:     `1px solid ${activeCategoryMeta?.color || "#ccc"}`,
+            }}
+          >
+            {activeCategoryMeta?.label || activeCategory}
+          </span>
+          <button style={s.clearCat} onClick={() => setActiveCategory(null)}>
+            ✕ clear
+          </button>
+        </div>
+      )}
+
+      {showCategoryGrid && (
         <div style={s.categoriesSection}>
           <p style={s.categoriesLabel}>Popular categories</p>
           <div style={s.categoriesGrid}>
-            {POPULAR_CATEGORIES.map(cat => (
-              <button
-                key={cat.label}
-                style={{
-                  ...s.categoryChip,
-                  color: cat.color,
-                  border: `1.5px solid ${cat.color}`,
-                  background: "white",
-                }}
-                onClick={() => setQuery(cat.value)}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {POPULAR_CATEGORIES.map(cat => {
+              const isActive = activeCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  style={{
+                    ...s.categoryChip,
+                    color:      isActive ? "white"  : cat.color,
+                    border:     `1.5px solid ${cat.color}`,
+                    background: isActive ? cat.color : "white",
+                  }}
+                  onClick={() => toggleCategory(cat.value)}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -113,73 +132,71 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
         <p style={s.dim}>Loading services...</p>
       ) : (
         <div style={s.results}>
-          {filteredServices.map(service => {
+          {services.map(service => {
             const p = service.provider;
             return (
-          <div
-            key={service.id}
-            style={s.card}
-            onClick={() => setSelectedId(service.id)}
-          >
-            {p?.profile_picture && (
-              <img
-                src={p.profile_picture}
-                alt="provider"
-                style={s.avatar}
-              />
-            )}
+              <div
+                key={service.id}
+                style={s.card}
+                onClick={() => setSelectedId(service.id)}
+              >
+                {p?.profile_picture && (
+                  <img
+                    src={p.profile_picture}
+                    alt="provider"
+                    style={s.avatar}
+                  />
+                )}
 
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
-                <div>
-                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#0f0620" }}>
-                    {p?.first_name} {p?.last_name}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#aaa", marginLeft: "8px" }}>
-                    {p?.city}, {p?.country}
-                  </span>
-                </div>
-                <div style={{ fontWeight: "700", fontSize: "16px", color: "#4a3aff", whiteSpace: "nowrap" }}>
-                  ${service.price}<span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                    <div>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: colors.dark }}>
+                        {p?.first_name} {p?.last_name}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "#aaa", marginLeft: "8px" }}>
+                        {p?.city}, {p?.country}
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: "700", fontSize: "16px", color: colors.accentIndigo, whiteSpace: "nowrap" }}>
+                      ${service.price}<span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>
+                    </div>
+                  </div>
+
+                  <h3 style={s.cardTitle}>{service.title}</h3>
+
+                  <p style={s.cardDescription}>
+                    {service.description?.length > 220
+                      ? service.description.slice(0, 220) + "..."
+                      : service.description}
+                  </p>
+
+                  {p?.tagline && (
+                    <p style={{ fontSize: "12px", color: "#999", margin: "0 0 10px", fontStyle: "italic" }}>
+                      "{p.tagline}"
+                    </p>
+                  )}
+
+                  <div style={s.cardMeta}>
+                    {service.category && (
+                      <span style={s.cardCategory}>{service.category}</span>
+                    )}
+                    {service.is_remote ? (
+                      <span style={s.remoteBadge}>Remote</span>
+                    ) : (
+                      <span style={s.areaBadge}>{p?.city}, {p?.country}</span>
+                    )}
+                  </div>
                 </div>
               </div>
+            );
+          })}
 
-              <h3 style={s.cardTitle}>{service.title}</h3>
-
-              <p style={s.cardDescription}>
-                {service.description?.length > 220
-                  ? service.description.slice(0, 220) + "..."
-                  : service.description}
-              </p>
-
-              {p?.tagline && (
-                <p style={{ fontSize: "12px", color: "#999", margin: "0 0 10px", fontStyle: "italic" }}>
-                  "{p.tagline}"
-                </p>
-              )}
-
-              <div style={s.cardMeta}>
-                {service.category && (
-                  <span style={s.cardCategory}>{service.category}</span>
-                )}
-                {service.is_remote ? (
-                  <span style={s.remoteBadge}>Remote</span>
-                ) : (
-                  <span style={s.areaBadge}>{p?.city}, {p?.country}</span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-
-        })}
-          {filteredServices.length === 0 && (
+          {services.length === 0 && (
             <p style={s.dim}>
-              {services.length === 0
-                ? "No services listed yet."
-                : query.trim()
-                  ? `No services match your search.`
-                  : "No services match your filters."}
+              {query.trim() || activeCategory || location.trim()
+                ? "No services match your filters."
+                : "No services listed yet. "}
             </p>
           )}
         </div>
@@ -192,7 +209,7 @@ const s = {
   page: {
     padding: "32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     boxSizing: "border-box",
     overflowY: "auto",
@@ -201,24 +218,50 @@ const s = {
     fontSize: "22px",
     fontWeight: "700",
     marginBottom: "20px",
-    color: "#0f0620",
+    color: colors.dark,
   },
   searchRow: {
     display: "flex",
     gap: "12px",
-    marginBottom: "24px",
+    marginBottom: "16px",
   },
   input: {
     padding: "12px 16px",
     fontSize: "14px",
-    borderRadius: "8px",
-    border: "1px solid #ede9fe",
+    borderRadius: 0,
+    border: `1px solid ${colors.border}`,
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "'Poppins', sans-serif",
-    color: "#0f0620",
+    color: colors.dark,
     background: "white",
     width: "100%",
+  },
+
+  activeCatRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "16px",
+  },
+  activeCatLabel: {
+    fontSize: "12px",
+    color: "#aaa",
+  },
+  activeCatChip: {
+    fontSize: "11.5px",
+    fontWeight: "600",
+    padding: "3px 10px",
+    borderRadius: 0,
+  },
+  clearCat: {
+    background: "none",
+    border: "none",
+    fontSize: "11px",
+    color: "#bbb",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+    padding: "0",
   },
 
   categoriesSection: {
@@ -245,6 +288,7 @@ const s = {
     letterSpacing: "0.02em",
     cursor: "pointer",
     fontFamily: "'Poppins', sans-serif",
+    transition: "background 0.15s, color 0.15s",
   },
 
   results: {
@@ -262,8 +306,8 @@ const s = {
   card: {
     background: "white",
     padding: "24px 28px",
-    borderRadius: "12px",
-    border: "1px solid #ede9fe",
+    borderRadius: "4px",
+    border: `1px solid ${colors.border}`,
     cursor: "pointer",
     display: "flex",
     gap: "20px",
@@ -273,7 +317,7 @@ const s = {
     margin: "0 0 8px",
     fontSize: "15px",
     fontWeight: "600",
-    color: "#0f0620",
+    color: colors.dark,
   },
   cardDescription: {
     margin: "0 0 10px",
@@ -295,10 +339,10 @@ const s = {
   remoteBadge: {
     fontSize: "11px",
     fontWeight: "600",
-    color: "rgb(83, 58, 253)",
-    background: "#f0eeff",
+    color: colors.purple,
+    background: colors.purpleSoft,
     border: "1px solid #d4c8ff",
-    borderRadius: "20px",
+    borderRadius: 0,
     padding: "2px 8px",
   },
   areaBadge: {
@@ -307,14 +351,8 @@ const s = {
     color: "#555",
     background: "#f5f5f5",
     border: "1px solid #e0e0e0",
-    borderRadius: "20px",
+    borderRadius: 0,
     padding: "2px 8px",
-  },
-  cardPrice: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "rgb(83, 58, 253)",
-    margin: 0,
   },
   dim: {
     fontSize: "13px",

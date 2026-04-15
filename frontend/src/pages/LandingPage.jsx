@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { colors } from '../constants';
 
 const hirePerks = [
   { title: 'Real people, real skills', desc: 'Every provider is a peer. You know exactly who you\'re working with before you book.' },
@@ -23,7 +24,7 @@ function LandingPage({ onSignIn, onGetStarted }) {
       <nav style={styles.nav}>
         <span style={styles.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
-          <span style={{ color: 'rgb(167, 139, 250)' }}>·</span>
+          <span style={{ color: colors.violet }}>·</span>
           <span style={{ fontWeight: 700 }}>market</span>
         </span>
         <div style={styles.navRight}>
@@ -101,7 +102,7 @@ const styles = {
     justifyContent: 'space-between',
     padding: '0 48px',
     height: '60px',
-    background: '#0f0620',
+    background: colors.dark,
     position: 'relative',
     zIndex: 10,
   },
@@ -127,7 +128,7 @@ const styles = {
     fontWeight: '500',
   },
   getStartedBtn: {
-    background: 'rgb(83, 58, 253)',
+    background: colors.purple,
     color: 'white',
     border: 'none',
     borderRadius: '5px',
@@ -182,7 +183,7 @@ const styles = {
     letterSpacing: '-1px',
   },
   headlineAccent: {
-    background: 'linear-gradient(90deg, #c4b5fd, #a78bfa, #7c3aed)',
+    background: `linear-gradient(90deg, ${colors.gradientEnd}, #a78bfa, #7c3aed)`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
@@ -199,7 +200,7 @@ const styles = {
   },
   ctaBtn: {
     display: 'inline-block',
-    background: 'rgb(83, 58, 253)',
+    background: colors.purple,
     color: 'white',
     border: 'none',
     borderRadius: '6px',
@@ -241,8 +242,8 @@ const styles = {
     fontFamily: "'Poppins', sans-serif",
   },
   optionCardActive: {
-    background: 'rgb(83, 58, 253)',
-    border: '1.5px solid rgb(83, 58, 253)',
+    background: colors.purple,
+    border: `1.5px solid ${colors.purple}`,
   },
   optionTitle: {
     fontSize: '15px',

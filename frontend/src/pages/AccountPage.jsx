@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import { COUNTRIES } from "../constants";
+import { COUNTRIES, colors } from "../constants";
 
-const DARK = "#0f0620";
-const PURPLE = "rgb(83, 58, 253)";
 
 function EditableRow({ field, label, display, inputType = 'text', options = null,
                        editingField, editValue, editError, saving,
@@ -320,7 +318,7 @@ const s = {
   page: {
     padding: "20px 40px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     boxSizing: "border-box",
   },
@@ -333,13 +331,13 @@ const s = {
   welcome: {
     fontSize: "22px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     margin: 0,
   },
   walletPill: {
     background: "white",
-    border: "1px solid #ede9fe",
-    borderRadius: "10px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "10px 18px",
     textAlign: "center",
     flexShrink: 0,
@@ -355,7 +353,7 @@ const s = {
   walletAmount: {
     fontSize: "18px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
   },
   subRow: {
     display: "flex",
@@ -378,7 +376,7 @@ const s = {
     flexShrink: 0,
     fontSize: "15px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     paddingTop: "2px",
   },
   rowFields: { flex: 1 },
@@ -389,9 +387,9 @@ const s = {
     gap: "16px",
   },
   fieldLabel: { fontSize: "13px", color: "#aaa", margin: "0 0 3px" },
-  fieldValue: { fontSize: "15px", fontWeight: "500", color: DARK, margin: 0 },
+  fieldValue: { fontSize: "15px", fontWeight: "500", color: colors.dark, margin: 0 },
   fieldSub: { fontSize: "12.5px", color: "#888", margin: "2px 0 0" },
-  fieldPrice: { fontSize: "15px", fontWeight: "700", color: DARK, flexShrink: 0 },
+  fieldPrice: { fontSize: "15px", fontWeight: "700", color: colors.dark, flexShrink: 0 },
   editBtn: {
     fontSize: "13px",
     fontWeight: "500",
@@ -406,9 +404,9 @@ const s = {
     fontSize: "14px",
     padding: "7px 10px",
     border: "1px solid #c4b5fd",
-    borderRadius: "6px",
+    borderRadius: "4px",
     outline: "none",
-    color: DARK,
+    color: colors.dark,
     width: "100%",
     boxSizing: "border-box",
     marginBottom: "8px",
@@ -418,10 +416,10 @@ const s = {
     fontFamily: "'Poppins', sans-serif",
     fontSize: "12.5px",
     fontWeight: "600",
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "4px",
     padding: "6px 14px",
     cursor: "pointer",
   },
@@ -432,7 +430,7 @@ const s = {
     background: "none",
     color: "#888",
     border: "1px solid #e5e7eb",
-    borderRadius: "6px",
+    borderRadius: "4px",
     padding: "6px 14px",
     cursor: "pointer",
   },
@@ -446,7 +444,7 @@ const s = {
     background: "white",
     border: "1px solid #ddd6fe",
     color: "#555",
-    borderRadius: "6px",
+    borderRadius: 0,
     padding: "4px 12px",
     fontSize: "12.5px",
   },
@@ -460,7 +458,7 @@ const s = {
     gap: "8px",
     background: "#fff1f2",
     border: "1px solid #fecdd3",
-    borderRadius: "6px",
+    borderRadius: "4px",
     padding: "7px 12px",
     marginBottom: "6px",
   },
@@ -474,7 +472,7 @@ const s = {
     background: "#dc2626",
     color: "white",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "4px",
     fontSize: "12px",
     fontWeight: "600",
     padding: "4px 14px",
@@ -505,7 +503,7 @@ const s = {
     marginTop: "12px",
     background: "none",
     border: "none",
-    color: PURPLE,
+    color: colors.purple,
     fontSize: "12.5px",
     fontWeight: "600",
     cursor: "pointer",

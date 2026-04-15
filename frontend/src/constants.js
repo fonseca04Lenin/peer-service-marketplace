@@ -18,3 +18,19 @@ export const COUNTRIES = [
   'Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
   'Uzbekistan','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
 ];
+
+/** Shared UI palette — peer·market */
+export const colors = {
+  dark: '#0f0620',
+  purple: 'rgb(83, 58, 253)',
+  /** Brighter indigo (e.g. prices in search) */
+  accentIndigo: '#4a3aff',
+  violet: 'rgb(167, 139, 250)',
+  violetBorder: 'rgba(167, 139, 250, 0.45)',
+  pageBg: '#f7f6ff',
+  border: '#ede9fe',
+  rowLine: '#f5f3ff',
+  purpleSoft: '#f0eeff',
+  gradientEnd: '#c4b5fd',
+  muted: '#bbb',
+};

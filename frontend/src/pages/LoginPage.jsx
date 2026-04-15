@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { saveToken } from '../api';
+import { colors } from '../constants';
 
 function LoginPage({ onLogin, onGoToSignUp, onBack }) {
   const [username, setUsername] = useState('');
@@ -41,7 +42,7 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
       <nav style={styles.nav}>
         <span onClick={onBack} style={styles.logo}>
           <span style={{ fontWeight: 400 }}>peer</span>
-          <span style={{ color: 'rgb(167, 139, 250)' }}>·</span>
+          <span style={{ color: colors.violet }}>·</span>
           <span style={{ fontWeight: 700 }}>market</span>
         </span>
       </nav>
@@ -102,7 +103,7 @@ const styles = {
   nav: {
     padding: '0 48px',
     height: '60px',
-    background: '#0f0620',
+    background: colors.dark,
     display: 'flex',
     alignItems: 'center',
     flexShrink: 0,
@@ -127,7 +128,7 @@ const styles = {
   card: {
     background: 'white',
     padding: '48px',
-    borderRadius: '10px',
+    borderRadius: '4px',
     width: '480px',
     boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
   },
@@ -135,7 +136,7 @@ const styles = {
     margin: '0 0 32px 0',
     fontSize: '22px',
     fontWeight: '600',
-    color: '#0f0620',
+    color: colors.dark,
   },
   label: {
     display: 'block',
@@ -153,13 +154,13 @@ const styles = {
     borderRadius: '6px',
     fontSize: '15px',
     outline: 'none',
-    color: '#0f0620',
+    color: colors.dark,
     fontFamily: "'Poppins', sans-serif",
   },
   button: {
     width: '100%',
     padding: '13px',
-    background: 'rgb(83, 58, 253)',
+    background: colors.purple,
     color: 'white',
     border: 'none',
     borderRadius: '6px',
@@ -183,7 +184,7 @@ const styles = {
     margin: 0,
   },
   link: {
-    color: 'rgb(83, 58, 253)',
+    color: colors.purple,
     cursor: 'pointer',
     fontWeight: '600',
   },

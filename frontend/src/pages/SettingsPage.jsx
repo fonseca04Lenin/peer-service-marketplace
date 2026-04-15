@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-
-const PURPLE = "rgb(83, 58, 253)";
-const DARK   = "#0f0620";
+import { colors } from "../constants";
 
 function Toggle({ on, onToggle }) {
   return (
-    <div onClick={onToggle} style={{ ...s.track, background: on ? PURPLE : "#d1d5db" }}>
+    <div onClick={onToggle} style={{ ...s.track, background: on ? colors.purple : "#d1d5db" }}>
       <div style={{ ...s.thumb, transform: on ? "translateX(20px)" : "translateX(2px)" }} />
     </div>
   );
@@ -162,7 +160,7 @@ const s = {
   page: {
     padding: "36px 32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     boxSizing: "border-box",
   },
@@ -175,7 +173,7 @@ const s = {
   title: {
     fontSize: "22px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     margin: 0,
   },
   savingText: {
@@ -185,7 +183,7 @@ const s = {
   },
   section: {
     background: "white",
-    border: "1px solid #ede9fe",
+    border: `1px solid ${colors.border}`,
     padding: "20px 24px",
     marginBottom: "18px",
   },
@@ -208,7 +206,7 @@ const s = {
   settingLabel: {
     fontSize: "13.5px",
     fontWeight: "600",
-    color: DARK,
+    color: colors.dark,
     margin: "0 0 3px",
   },
   settingDesc: {
@@ -222,7 +220,7 @@ const s = {
   track: {
     width: 44,
     height: 24,
-    borderRadius: 12,
+    borderRadius: 4,
     cursor: "pointer",
     position: "relative",
     transition: "background 0.2s",
@@ -233,7 +231,7 @@ const s = {
     top: 2,
     width: 20,
     height: 20,
-    borderRadius: "50%",
+    borderRadius: 2,
     background: "white",
     boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
     transition: "transform 0.2s",
@@ -241,10 +239,10 @@ const s = {
   select: {
     fontFamily: "'Poppins', sans-serif",
     fontSize: "12.5px",
-    color: DARK,
+    color: colors.dark,
     background: "#faf9ff",
-    border: "1px solid #ede9fe",
-    borderRadius: "8px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "7px 12px",
     cursor: "pointer",
     outline: "none",
@@ -256,7 +254,7 @@ const s = {
     color: "white",
     background: "#ef4444",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "4px",
     padding: "8px 16px",
     cursor: "pointer",
     whiteSpace: "nowrap",
@@ -272,7 +270,7 @@ const s = {
   },
   modal: {
     background: "white",
-    borderRadius: "16px",
+    borderRadius: "4px",
     padding: "32px",
     width: "100%",
     maxWidth: "420px",
@@ -281,7 +279,7 @@ const s = {
   modalTitle: {
     fontSize: "18px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
     margin: "0 0 12px",
   },
   modalBody: {
@@ -292,7 +290,7 @@ const s = {
   },
   modalPrompt: {
     fontSize: "13px",
-    color: DARK,
+    color: colors.dark,
     margin: "0 0 10px",
   },
   input: {
@@ -302,7 +300,7 @@ const s = {
     fontSize: "13.5px",
     padding: "10px 14px",
     border: "1px solid #fca5a5",
-    borderRadius: "8px",
+    borderRadius: "4px",
     outline: "none",
     marginBottom: "20px",
   },
@@ -318,7 +316,7 @@ const s = {
     color: "#888",
     background: "none",
     border: "1px solid #e5e7eb",
-    borderRadius: "8px",
+    borderRadius: "4px",
     padding: "8px 16px",
     cursor: "pointer",
   },

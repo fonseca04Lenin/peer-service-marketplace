@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiFetch, getToken } from "../api";
-
-const PURPLE = "rgb(83, 58, 253)";
-const PURPLE_SOFT = "#ede9fe";
+import { colors } from "../constants";
 
 function defaultLocalDatetime() {
   const d = new Date();
@@ -335,7 +333,7 @@ const s = {
   page: {
     padding: "32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     boxSizing: "border-box",
   },
@@ -350,8 +348,8 @@ const s = {
   },
   rightCol: {
     background: "white",
-    border: "1px solid #ede9fe",
-    borderRadius: "16px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "24px",
     position: "sticky",
     top: "24px",
@@ -365,7 +363,7 @@ const s = {
   backBtn: {
     background: "none",
     border: "none",
-    color: PURPLE,
+    color: colors.purple,
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -374,12 +372,12 @@ const s = {
     fontFamily: "'Poppins', sans-serif",
   },
   bannerOk: {
-    background: PURPLE_SOFT,
+    background: colors.border,
     border: "1px solid #d4c8ff",
-    borderRadius: "12px",
+    borderRadius: "4px",
     padding: "16px 18px",
     marginBottom: "20px",
-    color: "#0f0620",
+    color: colors.dark,
     fontSize: "14px",
     lineHeight: 1.5,
   },
@@ -393,7 +391,7 @@ const s = {
     width: "100%",
     height: "280px",
     objectFit: "cover",
-    borderRadius: "14px",
+    borderRadius: "4px",
     marginBottom: "28px",
   },
   avatar: {
@@ -406,7 +404,7 @@ const s = {
   providerName: {
     fontSize: "16px",
     fontWeight: "700",
-    color: "#0f0620",
+    color: colors.dark,
     margin: "0 0 3px",
   },
   tagline: {
@@ -421,7 +419,7 @@ const s = {
   },
   divider: {
     height: "1px",
-    background: "#ede9fe",
+    background: colors.border,
     margin: "20px 0",
   },
   priceRow: {
@@ -434,14 +432,14 @@ const s = {
   title: {
     fontSize: "20px",
     fontWeight: "700",
-    color: "#0f0620",
+    color: colors.dark,
     margin: 0,
     flex: 1,
   },
   price: {
     fontSize: "22px",
     fontWeight: "700",
-    color: PURPLE,
+    color: colors.purple,
     whiteSpace: "nowrap",
   },
   badges: {
@@ -458,10 +456,10 @@ const s = {
   remoteBadge: {
     fontSize: "11px",
     fontWeight: "600",
-    color: PURPLE,
-    background: PURPLE_SOFT,
+    color: colors.purple,
+    background: colors.border,
     border: "1px solid #d4c8ff",
-    borderRadius: "20px",
+    borderRadius: 0,
     padding: "2px 8px",
   },
   areaBadge: {
@@ -470,7 +468,7 @@ const s = {
     color: "#555",
     background: "#f5f5f5",
     border: "1px solid #e0e0e0",
-    borderRadius: "20px",
+    borderRadius: 0,
     padding: "2px 8px",
   },
   date: {
@@ -513,10 +511,10 @@ const s = {
   skillChip: {
     fontSize: "12px",
     fontWeight: "500",
-    color: PURPLE,
-    background: PURPLE_SOFT,
+    color: colors.purple,
+    background: colors.border,
     border: "1px solid #d4c8ff",
-    borderRadius: "6px",
+    borderRadius: 0,
     padding: "4px 10px",
   },
   actionRow: {
@@ -528,10 +526,10 @@ const s = {
   ctaBtn: {
     width: "100%",
     padding: "14px 28px",
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "4px",
     fontSize: "14px",
     fontWeight: "600",
     cursor: "pointer",
@@ -541,9 +539,9 @@ const s = {
     width: "100%",
     padding: "14px 22px",
     background: "white",
-    color: PURPLE,
-    border: `1.5px solid ${PURPLE}`,
-    borderRadius: "10px",
+    color: colors.purple,
+    border: `1.5px solid ${colors.purple}`,
+    borderRadius: "4px",
     fontSize: "14px",
     fontWeight: "600",
     cursor: "pointer",
@@ -551,8 +549,8 @@ const s = {
   },
   bookingCard: {
     background: "white",
-    border: "1px solid #ede9fe",
-    borderRadius: "12px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "20px",
     marginTop: "8px",
   },
@@ -562,7 +560,7 @@ const s = {
     alignItems: "center",
     marginBottom: "16px",
     paddingBottom: "12px",
-    borderBottom: "1px solid #ede9fe",
+    borderBottom: `1px solid ${colors.border}`,
   },
   summaryLabel: {
     fontSize: "13px",
@@ -571,7 +569,7 @@ const s = {
   summaryPrice: {
     fontSize: "18px",
     fontWeight: "700",
-    color: PURPLE,
+    color: colors.purple,
   },
   fieldLabel: {
     display: "block",
@@ -589,23 +587,23 @@ const s = {
     padding: "12px 14px",
     marginBottom: "14px",
     boxSizing: "border-box",
-    border: "1px solid #ede9fe",
-    borderRadius: "8px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     fontSize: "14px",
     fontFamily: "'Poppins', sans-serif",
-    color: "#0f0620",
+    color: colors.dark,
   },
   textarea: {
     width: "100%",
     padding: "12px 14px",
     marginBottom: "12px",
     boxSizing: "border-box",
-    border: "1px solid #ede9fe",
-    borderRadius: "8px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     fontSize: "14px",
     fontFamily: "'Poppins', sans-serif",
     resize: "vertical",
-    color: "#0f0620",
+    color: colors.dark,
   },
   err: {
     color: "#dc2626",
@@ -622,8 +620,8 @@ const s = {
     padding: "12px 18px",
     background: "white",
     color: "#666",
-    border: "1px solid #ede9fe",
-    borderRadius: "10px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
@@ -631,10 +629,10 @@ const s = {
   },
   ctaBtnInline: {
     padding: "12px 22px",
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "4px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",

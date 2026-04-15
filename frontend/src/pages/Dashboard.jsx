@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-
-const PURPLE = "rgb(83, 58, 253)";
-const DARK   = "#0f0620";
+import { colors } from "../constants";
 
 const STATUS_COLOR = {
   confirmed: "#22c55e",
@@ -34,7 +32,7 @@ function getGreeting() {
 function StatusChip({ status }) {
   const color = STATUS_COLOR[status] || STATUS_COLOR.pending;
   return (
-    <span style={{ fontSize: "11px", fontWeight: "600", color, background: color + "18", padding: "2px 8px", borderRadius: "4px" }}>
+    <span style={{ fontSize: "11px", fontWeight: "600", color, background: color + "18", padding: "2px 8px", borderRadius: 0 }}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
@@ -212,12 +210,12 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                           <p style={s.rowSub}>{svc.category}</p>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                          <span style={{ fontSize: "13px", fontWeight: "700", color: PURPLE }}>${svc.price}</span>
+                          <span style={{ fontSize: "13px", fontWeight: "700", color: colors.purple }}>${svc.price}</span>
                           <span style={{
                             fontSize: "10px", fontWeight: "600", letterSpacing: "0.03em",
                             color: svc.is_active ? "#22c55e" : "#ccc",
                             background: svc.is_active ? "#f0fdf4" : "#f5f5f5",
-                            padding: "2px 7px", borderRadius: "4px",
+                            padding: "2px 7px", borderRadius: 0,
                           }}>
                             {svc.is_active ? "live" : "off"}
                           </span>
@@ -292,7 +290,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                         <p style={s.rowSub}>from {from}</p>
                       </div>
                       {b.service?.price != null && (
-                        <span style={{ fontSize: "12.5px", fontWeight: "700", color: DARK, flexShrink: 0 }}>
+                        <span style={{ fontSize: "12.5px", fontWeight: "700", color: colors.dark, flexShrink: 0 }}>
                           ${b.service.price}
                         </span>
                       )}
@@ -326,7 +324,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                     <Avatar name={name} src={reviewer?.profile_picture} size={30} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1px" }}>
-                        <span style={{ fontSize: "12.5px", fontWeight: "600", color: DARK }}>{name}</span>
+                        <span style={{ fontSize: "12.5px", fontWeight: "600", color: colors.dark }}>{name}</span>
                         <span style={{ color: "#f59e0b", fontSize: "11px", letterSpacing: "0.5px" }}>
                           {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
                         </span>
@@ -368,7 +366,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                     <Avatar name={name} src={u?.profile_picture} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1px" }}>
-                        <span style={{ fontSize: "12.5px", fontWeight: unread ? "700" : "600", color: DARK }}>
+                        <span style={{ fontSize: "12.5px", fontWeight: unread ? "700" : "600", color: colors.dark }}>
                           {name}
                         </span>
                         <span style={{ fontSize: "10.5px", color: "#ccc" }}>{formatTimeAgo(last?.created_at)}</span>
@@ -401,12 +399,12 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                   <div key={svc.id} style={{ ...s.row, gap: "10px", cursor: "pointer" }} onClick={() => onSelectService?.(svc.id)}>
                     <Avatar name={providerName} src={p?.profile_picture} size={32} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: "12.5px", fontWeight: "600", color: DARK, margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <p style={{ fontSize: "12.5px", fontWeight: "600", color: colors.dark, margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {svc.title}
                       </p>
                       <p style={{ fontSize: "11px", color: "#bbb", margin: 0 }}>{svc.category}</p>
                     </div>
-                    <span style={{ fontSize: "13px", fontWeight: "700", color: PURPLE, flexShrink: 0 }}>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: colors.purple, flexShrink: 0 }}>
                       ${svc.price}
                     </span>
                   </div>
@@ -425,7 +423,7 @@ const s = {
   page: {
     padding: "36px 32px",
     fontFamily: "'Poppins', sans-serif",
-    background: "#f7f6ff",
+    background: colors.pageBg,
     minHeight: "100%",
     overflowY: "auto",
     boxSizing: "border-box",
@@ -441,13 +439,13 @@ const s = {
   greeting: {
     fontSize: "24px",
     fontWeight: "800",
-    color: DARK,
+    color: colors.dark,
     margin: "0 0 4px",
     letterSpacing: "-0.4px",
   },
   date: {
     fontSize: "12px",
-    color: "#bbb",
+    color: colors.muted,
     margin: 0,
     fontWeight: "400",
   },
@@ -455,8 +453,8 @@ const s = {
     display: "flex",
     alignItems: "center",
     background: "white",
-    border: "1px solid #ede9fe",
-    borderRadius: "9px",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
     padding: "10px 18px",
     flexShrink: 0,
     gap: "4px",
@@ -476,11 +474,11 @@ const s = {
   statVal: {
     fontSize: "14px",
     fontWeight: "700",
-    color: DARK,
+    color: colors.dark,
   },
   statLbl: {
     fontSize: "11px",
-    color: "#bbb",
+    color: colors.muted,
     marginLeft: "2px",
   },
   grid: {
@@ -501,9 +499,9 @@ const s = {
   },
   section: {
     background: "white",
-    borderRadius: "11px",
+    borderRadius: "4px",
     padding: "18px 20px",
-    border: "1px solid #ede9fe",
+    border: `1px solid ${colors.border}`,
   },
   sectionHead: {
     display: "flex",
@@ -514,13 +512,13 @@ const s = {
   sectionTitle: {
     fontSize: "13px",
     fontWeight: "600",
-    color: DARK,
+    color: colors.dark,
   },
   linkBtn: {
     background: "none",
     border: "none",
     fontSize: "11.5px",
-    color: "#bbb",
+    color: colors.muted,
     cursor: "pointer",
     padding: 0,
     fontFamily: "'Poppins', sans-serif",
@@ -528,14 +526,14 @@ const s = {
   },
   muted: {
     fontSize: "12.5px",
-    color: "#bbb",
+    color: colors.muted,
     margin: 0,
   },
   btnPrimary: {
-    background: PURPLE,
+    background: colors.purple,
     color: "white",
     border: "none",
-    borderRadius: "7px",
+    borderRadius: "4px",
     padding: "8px 16px",
     fontSize: "12px",
     fontWeight: "600",
@@ -548,7 +546,7 @@ const s = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "9px 0",
-    borderBottom: "1px solid #f5f3ff",
+    borderBottom: `1px solid ${colors.rowLine}`,
     gap: "8px",
   },
   rowSelected: {
@@ -557,12 +555,12 @@ const s = {
   rowTitle: {
     fontSize: "13px",
     fontWeight: "600",
-    color: DARK,
+    color: colors.dark,
     margin: "0 0 1px",
   },
   rowSub: {
     fontSize: "11px",
-    color: "#bbb",
+    color: colors.muted,
     margin: 0,
   },
   closeBtn: {
@@ -580,7 +578,7 @@ const s = {
     marginTop: "6px",
     background: "none",
     border: "none",
-    color: "#bbb",
+    color: colors.muted,
     fontSize: "11.5px",
     fontWeight: "500",
     cursor: "pointer",
@@ -630,13 +628,13 @@ const s = {
   unreadDot: {
     width: 6,
     height: 6,
-    borderRadius: "50%",
-    background: PURPLE,
+    borderRadius: 0,
+    background: colors.purple,
     flexShrink: 0,
   },
   avatar: {
     borderRadius: "50%",
-    background: "linear-gradient(135deg, rgb(83, 58, 253), #c4b5fd)",
+    background: `linear-gradient(135deg, ${colors.purple}, ${colors.gradientEnd})`,
     color: "white",
     fontWeight: "700",
     display: "flex",
