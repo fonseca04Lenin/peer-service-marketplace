@@ -14,3 +14,9 @@ __pycache__/
 # Vite
 dist/
 *.vite/
+
+# Python virtual environment
+venv/
+
+# Database
+db.sqlite3
