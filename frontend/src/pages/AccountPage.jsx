@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import { COUNTRIES, colors } from "../constants";
+import { COUNTRIES, colors, CATEGORY_LABELS } from "../constants";
 
 
 function EditableRow({ field, label, display, inputType = 'text', options = null,
@@ -282,7 +282,7 @@ function AccountPage({ currentUser, onSelectService }) {
                             style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                             onClick={() => onSelectService?.(svc.id)}
                           >
-                            <p style={s.fieldLabel}>{svc.category}</p>
+                            <p style={s.fieldLabel}>{CATEGORY_LABELS[svc.category] || svc.category}</p>
                             <p style={s.fieldValue}>{svc.title}</p>
                             <p style={s.fieldSub}>{svc.description}</p>
                           </div>

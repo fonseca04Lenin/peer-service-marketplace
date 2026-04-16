@@ -23,11 +23,13 @@ class Payment(models.Model):
 
 class WalletTransaction(models.Model):
     TYPE_CHOICES = [
-        ('deposit',    'Deposit'),      #money added to wallet
-        ('withdrawal', 'Withdrawal'),   # money withdrawn from wallet
-        ('payment',    'Payment'),      # buyer pays for a service
-        ('earning',    'Earning'),      # provider receives payment
-        ('refund',     'Refund'),       # money returned to buyerr
+        ('deposit',      'Deposit'),
+        ('withdrawal',   'Withdrawal'),
+        ('payment',      'Payment'),
+        ('escrow',       'Escrow Hold'),
+        ('earning',      'Earning'),
+        ('refund',       'Refund'),
+        ('platform_fee', 'Platform Fee'),
     ]
     STATUS_CHOICES = [
         ('pending',   'Pending'),
@@ -46,3 +48,21 @@ class WalletTransaction(models.Model):
 
     def __str__(self):
         return f'{self.type} ${self.amount} — {self.user.username}'
+
+
+class EscrowEntry(models.Model):
+    STATUS_CHOICES = [
+        ('held',     'Held'),
+        ('released', 'Released'),
+        ('refunded', 'Refunded'),
+    ]
+
+    booking      = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='escrow')
+    amount       = models.DecimalField(max_digits=10, decimal_places=2)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2)
+    status       = models.CharField(max_length=10, choices=STATUS_CHOICES, default='held')
+    release_after = models.DateTimeField()
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Escrow ${self.amount} for booking {self.booking_id} [{self.status}]'

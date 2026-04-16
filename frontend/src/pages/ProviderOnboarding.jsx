@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { apiFetch } from '../api';
 import { colors } from '../constants';
+import CityAutocomplete from '../components/CityAutocomplete';
 
 function resolveMediaUrl(path) {
   if (!path) return null;
@@ -26,10 +27,14 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [skillInput, setSkillInput] = useState('');
 
   const [serviceTitle, setServiceTitle] = useState('');
-  const [serviceCategory, setServiceCategory] = useState('tutoring');
+  const [serviceCategory, setServiceCategory] = useState('tech_services');
   const [servicePrice, setServicePrice] = useState('');
   const [rateType, setRateType] = useState('hour');
   const [serviceDesc, setServiceDesc] = useState('');
+  const [serviceArea, setServiceArea] = useState('');
+  const [serviceAreaLat, setServiceAreaLat] = useState(null);
+  const [serviceAreaLng, setServiceAreaLng] = useState(null);
+  const [isRemote, setIsRemote] = useState(false);
   const [serviceImage, setServiceImage] = useState(null);
   const [serviceImageFile, setServiceImageFile] = useState(null);
 
@@ -116,6 +121,10 @@ function ProviderOnboarding({ onFinish, onBack }) {
       svcData.append('description', serviceDesc.trim());
       svcData.append('category', serviceCategory);
       svcData.append('price', String(parseFloat(servicePrice)));
+      svcData.append('is_remote', isRemote);
+      svcData.append('service_area', isRemote ? '' : serviceArea.trim());
+      if (!isRemote && serviceAreaLat != null) svcData.append('latitude', serviceAreaLat);
+      if (!isRemote && serviceAreaLng != null) svcData.append('longitude', serviceAreaLng);
       svcData.append('image', serviceImageFile);
       const svcRes = await apiFetch('/services/create/', { method: 'POST', body: svcData });
       if (!svcRes.ok) {
@@ -180,6 +189,10 @@ function ProviderOnboarding({ onFinish, onBack }) {
       }
       if (!serviceDesc.trim()) {
         setSaveError('Please enter a description for your service.');
+        return;
+      }
+      if (!isRemote && !serviceArea.trim()) {
+        setSaveError('Enter a city, or mark the service as remote.');
         return;
       }
       if (!serviceImageFile) {
@@ -423,11 +436,13 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     onChange={(e) => setServiceCategory(e.target.value)}
                     style={styles.select}
                   >
-                    <option value="tutoring">Tutoring</option>
-                    <option value="handyman">Handyman</option>
-                    <option value="tech">Tech Help</option>
-                    <option value="creative">Creative Work</option>
-                    <option value="home">Home Care</option>
+                    <option value="tech_services">Tech Services</option>
+                    <option value="creative_services">Creative Services</option>
+                    <option value="home_services">Home Services</option>
+                    <option value="education">Education</option>
+                    <option value="health_wellness">Health & Wellness</option>
+                    <option value="financial_services">Financial Services</option>
+                    <option value="business_services">Business Services</option>
                     <option value="other">Other</option>
                   </select>
 
@@ -466,6 +481,42 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     style={styles.textarea}
                     rows={4}
                   />
+
+                  <label style={styles.label}>Location</label>
+                  <div style={styles.remoteRow}>
+                    <button
+                      type="button"
+                      onClick={() => setIsRemote(false)}
+                      style={{ ...(isRemote ? styles.rateBtn : styles.rateActive), flex: 1, padding: '10px', borderLeft: 'none' }}
+                    >
+                      In person
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRemote(true)}
+                      style={{ ...(isRemote ? styles.rateActive : styles.rateBtn), flex: 1, padding: '10px' }}
+                    >
+                      Remote
+                    </button>
+                  </div>
+
+                  {!isRemote && (
+                    <>
+                      <label style={styles.label}>City <span style={{ color: 'red' }}>*</span></label>
+                      <div style={{ marginBottom: '20px' }}>
+                        <CityAutocomplete
+                          value={serviceArea}
+                          onSelect={(city, lat, lng) => {
+                            setServiceArea(city);
+                            setServiceAreaLat(lat);
+                            setServiceAreaLng(lng);
+                          }}
+                          placeholder="Search for a city…"
+                          inputStyle={{ ...styles.input, marginBottom: 0 }}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <label style={styles.label}>Service photo <span style={{ color: 'red' }}>*</span></label>
                   <div
@@ -820,6 +871,13 @@ const styles = {
     padding: '12px 8px',
     fontFamily: "'Poppins', sans-serif",
     color: colors.dark,
+  },
+  remoteRow: {
+    display: 'flex',
+    border: '1px solid #dde3ea',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    marginBottom: '20px',
   },
   rateToggle: {
     display: 'flex',

@@ -3,11 +3,13 @@ import { apiFetch } from "../api";
 import { colors } from "../constants";
 
 const TYPE_META = {
-  deposit:    { label: "Added funds",      sign: "+", color: "#16a34a" },
-  earning:    { label: "Earnings received", sign: "+", color: "#16a34a" },
-  refund:     { label: "Refund",           sign: "+", color: "#16a34a" },
-  payment:    { label: "Service payment",  sign: "−", color: "#555"    },
-  withdrawal: { label: "Withdrawal",       sign: "−", color: "#555"    },
+  deposit:      { label: "Added funds",        sign: "+", color: "#16a34a" },
+  earning:      { label: "Earnings",          sign: "+", color: "#16a34a" },
+  refund:       { label: "Refund",            sign: "+", color: "#16a34a" },
+  escrow:       { label: "In escrow",         sign: "~", color: "#1d4ed8" },
+  payment:      { label: "Service payment",   sign: "−", color: "#555"    },
+  platform_fee: { label: "Platform fee",      sign: "−", color: "#aaa"    },
+  withdrawal:   { label: "Withdrawal",         sign: "−", color: "#555"    },
 };
 
 const STATUS_LABEL = {
@@ -25,6 +27,7 @@ function formatDate(iso) {
 
 function WalletPage() {
   const [balance,     setBalance]     = useState(null);
+  const [escrow,      setEscrow]      = useState(null);
   const [txns,        setTxns]        = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -46,7 +49,10 @@ function WalletPage() {
       apiFetch("/payments/transactions/").then(r => r.ok ? r.json() : []),
     ])
       .then(([user, history]) => {
-        if (user) setBalance(parseFloat(user.wallet_balance ?? 0));
+        if (user) {
+          setBalance(parseFloat(user.wallet_balance ?? 0));
+          setEscrow(parseFloat(user.escrow_balance ?? 0));
+        }
         setTxns(Array.isArray(history) ? history : []);
       })
       .finally(() => setPageLoading(false));
@@ -127,10 +133,23 @@ function WalletPage() {
       </div>
 
       <div style={s.balanceCard}>
-        <p style={s.balanceMeta}>Available balance</p>
-        <p style={s.balanceAmt}>
-          ${balance !== null ? balance.toFixed(2) : "0.00"}
-        </p>
+        <div style={s.balanceRow}>
+          <div>
+            <p style={s.balanceMeta}>Available balance</p>
+            <p style={s.balanceAmt}>
+              ${balance !== null ? balance.toFixed(2) : "0.00"}
+            </p>
+          </div>
+          {escrow > 0 && (
+            <div style={s.escrowBlock}>
+              <p style={s.balanceMeta}>In escrow</p>
+              <p style={s.escrowAmt}>
+                ${escrow.toFixed(2)}
+              </p>
+              <p style={s.escrowHint}>pending client approval</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={s.actionRow}>
@@ -271,6 +290,11 @@ const s = {
     marginBottom: "16px",
     maxWidth: "720px",
   },
+  balanceRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "48px",
+  },
   balanceMeta: {
     fontSize: "11px",
     fontWeight: "600",
@@ -285,6 +309,22 @@ const s = {
     color: colors.dark,
     margin: 0,
     letterSpacing: "-1px",
+  },
+  escrowBlock: {
+    borderLeft: "1px solid #e5e7eb",
+    paddingLeft: "48px",
+  },
+  escrowAmt: {
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#1d4ed8",
+    margin: 0,
+    letterSpacing: "-0.5px",
+  },
+  escrowHint: {
+    fontSize: "11px",
+    color: "#aaa",
+    margin: "6px 0 0",
   },
   actionRow: {
     display: "grid",

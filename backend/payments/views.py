@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction as db_transaction
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.decorators import api_view, permission_classes
@@ -12,13 +13,16 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from bookings.models import Booking
-from .models import Payment, WalletTransaction
+from .models import EscrowEntry, Payment, WalletTransaction
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 User = get_user_model()
 
+PLATFORM_FEE_PERCENT = Decimal(str(getattr(settings, 'PLATFORM_FEE_PERCENT', 10)))
+ESCROW_RELEASE_DAYS  = int(getattr(settings, 'ESCROW_RELEASE_DAYS', 7))
 
-#  Stripe based booking payment (kept for reference) do not delete yet 
+
+#  Stripe based booking payment (kept for reference) do not delete yet
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -151,12 +155,6 @@ def wallet_transactions(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def pay_booking(request):
-    """
-    Pay for a booking using wallet balance.
-    - Atomically deducts from buyer, credits provider.
-    - Moves the booking to 'confirmed'.
-    - Idempotent: second call returns an error if already paid.
-    """
     booking_id = request.data.get('booking_id')
     try:
         booking = Booking.objects.select_related('service__provider').get(
@@ -165,51 +163,72 @@ def pay_booking(request):
     except Booking.DoesNotExist:
         return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    if booking.status == 'cancelled':
-        return Response({'error': 'This booking has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+    if booking.status != 'confirmed':
+        if booking.status == 'cancelled':
+            return Response({'error': 'This booking has been cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+        if booking.status == 'paid':
+            return Response({'error': 'This booking has already been paid.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Booking must be confirmed by the provider before payment.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    already_paid = WalletTransaction.objects.filter(
-        booking=booking, user=request.user, type='payment', status='completed'
-    ).exists()
-    if already_paid:
+    if hasattr(booking, 'escrow'):
         return Response({'error': 'This booking has already been paid.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    amount = booking.service.price
+    total    = booking.service.price
+    fee      = (total * PLATFORM_FEE_PERCENT / Decimal('100')).quantize(Decimal('0.01'))
+    net      = total - fee
 
     with db_transaction.atomic():
         buyer = User.objects.select_for_update().get(pk=request.user.pk)
 
-        if buyer.wallet_balance < amount:
+        if buyer.wallet_balance < total:
             return Response(
                 {'error': 'Insufficient wallet balance.', 'balance': float(buyer.wallet_balance)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        #deductiom from buyer happens here 
-        buyer.wallet_balance -= amount
+        buyer.wallet_balance -= total
         buyer.save(update_fields=['wallet_balance'])
+
         WalletTransaction.objects.create(
             user=buyer,
             type='payment',
-            amount=amount,
+            amount=total,
             status='completed',
             booking=booking,
             note=f'Paid for: {booking.service.title}',
         )
-        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
-        provider.wallet_balance += amount
-        provider.save(update_fields=['wallet_balance'])
+
         WalletTransaction.objects.create(
-            user=provider,
-            type='earning',
-            amount=amount,
+            user=buyer,
+            type='platform_fee',
+            amount=fee,
             status='completed',
             booking=booking,
-            note=f'Earned from: {booking.service.title}',
+            note=f'Platform fee (10%): {booking.service.title}',
         )
 
-        # confirm the booking here
-        booking.status = 'confirmed'
+        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
+        provider.escrow_balance += net
+        provider.save(update_fields=['escrow_balance'])
+
+        WalletTransaction.objects.create(
+            user=provider,
+            type='escrow',
+            amount=net,
+            status='completed',
+            booking=booking,
+            note=f'Held in escrow: {booking.service.title}',
+        )
+
+        EscrowEntry.objects.create(
+            booking=booking,
+            amount=net,
+            platform_fee=fee,
+            status='held',
+            release_after=timezone.now() + timezone.timedelta(days=ESCROW_RELEASE_DAYS),
+        )
+
+        booking.status = 'paid'
         booking.save(update_fields=['status'])
 
     return Response({'status': 'paid', 'new_balance': float(buyer.wallet_balance)})
@@ -217,9 +236,101 @@ def pay_booking(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def release_escrow(request):
+    booking_id = request.data.get('booking_id')
+    try:
+        booking = Booking.objects.select_related('service__provider').get(
+            id=booking_id, requester=request.user
+        )
+    except Booking.DoesNotExist:
+        return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if booking.status != 'delivered':
+        return Response({'error': 'Provider must mark the service as delivered first.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        escrow = EscrowEntry.objects.get(booking=booking, status='held')
+    except EscrowEntry.DoesNotExist:
+        return Response({'error': 'No held escrow found for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with db_transaction.atomic():
+        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
+        provider.escrow_balance -= escrow.amount
+        provider.wallet_balance += escrow.amount
+        provider.save(update_fields=['escrow_balance', 'wallet_balance'])
+
+        WalletTransaction.objects.create(
+            user=provider,
+            type='earning',
+            amount=escrow.amount,
+            status='completed',
+            booking=booking,
+            note=f'Payment released: {booking.service.title}',
+        )
+
+        escrow.status = 'released'
+        escrow.save(update_fields=['status'])
+
+        booking.status = 'completed'
+        booking.save(update_fields=['status'])
+
+    return Response({'status': 'completed'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def refund_booking(request):
+    booking_id = request.data.get('booking_id')
+    try:
+        booking = Booking.objects.select_related('service__provider').get(
+            id=booking_id, requester=request.user
+        )
+    except Booking.DoesNotExist:
+        return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if booking.status not in ('paid', 'in_progress'):
+        return Response({'error': 'Refunds are only available before the service is delivered.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        escrow = EscrowEntry.objects.get(booking=booking, status='held')
+    except EscrowEntry.DoesNotExist:
+        return Response({'error': 'No held escrow found for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    refund_amount = escrow.amount + escrow.platform_fee
+
+    with db_transaction.atomic():
+        buyer = User.objects.select_for_update().get(pk=request.user.pk)
+        buyer.wallet_balance += refund_amount
+        buyer.save(update_fields=['wallet_balance'])
+
+        WalletTransaction.objects.create(
+            user=buyer,
+            type='refund',
+            amount=refund_amount,
+            status='completed',
+            booking=booking,
+            note=f'Refund: {booking.service.title}',
+        )
+
+        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
+        provider.escrow_balance -= escrow.amount
+        provider.save(update_fields=['escrow_balance'])
+
+        escrow.status = 'refunded'
+        escrow.save(update_fields=['status'])
+
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status'])
+
+    return Response({'status': 'refunded', 'new_balance': float(buyer.wallet_balance)})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def request_withdrawal(request):
     """
-    Provider requests a withdrawal of their wallet earnings.
+    Provider requests a withdrawal of their available wallet earnings.
+    Only wallet_balance (released funds) can be withdrawn — not escrow_balance.
     Balance is held (deducted) immediately; admin processes the payout.
     """
     try:
@@ -235,7 +346,7 @@ def request_withdrawal(request):
 
         if user.wallet_balance < amount:
             return Response(
-                {'error': 'Insufficient wallet balance.', 'balance': float(user.wallet_balance)},
+                {'error': 'Insufficient available balance.', 'balance': float(user.wallet_balance)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

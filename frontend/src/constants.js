@@ -19,11 +19,22 @@ export const COUNTRIES = [
   'Uzbekistan','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
 ];
 
-/** Shared UI palette — peer·market */
+export const CATEGORY_LABELS = {
+  tech_services:      'Tech Services',
+  creative_services:  'Creative Services',
+  home_services:      'Home Services',
+  education:          'Education',
+  health_wellness:    'Health & Wellness',
+  financial_services: 'Financial Services',
+  business_services:  'Business Services',
+  other:              'Other',
+};
+
+
 export const colors = {
   dark: '#0f0620',
   purple: 'rgb(83, 58, 253)',
-  /** Brighter indigo (e.g. prices in search) */
+
   accentIndigo: '#4a3aff',
   violet: 'rgb(167, 139, 250)',
   violetBorder: 'rgba(167, 139, 250, 0.45)',

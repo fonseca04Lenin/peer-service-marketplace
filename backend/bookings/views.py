@@ -80,19 +80,19 @@ def booking_detail(request, pk):
         return Response({'detail': 'This booking is already cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
 
     if is_provider:
-        if booking.status != 'pending':
-            return Response(
-                {'detail': 'You can only respond to pending requests.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if new_status not in ('confirmed', 'cancelled'):
-            return Response({'detail': 'Providers can confirm or decline only.'}, status=status.HTTP_400_BAD_REQUEST)
-        booking.status = new_status
+        if booking.status == 'pending' and new_status in ('confirmed', 'cancelled'):
+            booking.status = new_status
+        elif booking.status == 'paid' and new_status == 'in_progress':
+            booking.status = 'in_progress'
+        elif booking.status == 'in_progress' and new_status == 'delivered':
+            booking.status = 'delivered'
+        else:
+            return Response({'detail': 'Invalid status transition.'}, status=status.HTTP_400_BAD_REQUEST)
     elif is_requester:
         if new_status != 'cancelled':
-            return Response({'detail': 'Clients can only cancel.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'Clients can only cancel. Use the release or refund endpoints for paid bookings.'}, status=status.HTTP_400_BAD_REQUEST)
         if booking.status not in ('pending', 'confirmed'):
-            return Response({'detail': 'This booking cannot be cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'This booking cannot be cancelled here. Use the refund endpoint if you have already paid.'}, status=status.HTTP_400_BAD_REQUEST)
         booking.status = 'cancelled'
     else:
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)

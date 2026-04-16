@@ -119,3 +119,6 @@ CORS_ALLOW_HEADERS = [
     'authorization',
     'content-type',
 ]
+
+PLATFORM_FEE_PERCENT = 10
+ESCROW_RELEASE_DAYS  = 7

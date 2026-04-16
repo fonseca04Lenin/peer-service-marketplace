@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
-import { colors } from "../constants";
+import { colors, CATEGORY_LABELS } from "../constants";
 import ServicePage from "./ServicePage";
 import CityAutocomplete from "../components/CityAutocomplete";
 import { reverseGeocode } from "../utils/location";
 
 const POPULAR_CATEGORIES = [
-  { label: "Tutoring",     value: "tutoring",  color: colors.purple },
-  { label: "Handyman",     value: "handyman",  color: "#7B1FA2" },
-  { label: "Tech Help",    value: "tech",      color: colors.dark },
-  { label: "Creative Work",value: "creative",  color: "#047857" },
-  { label: "Home Care",    value: "home",      color: "#b45309" },
-  { label: "Other",        value: "other",     color: "#6b7280" },
+  { label: "Tech Services",     value: "tech_services",      color: colors.dark },
+  { label: "Creative Services", value: "creative_services",  color: "#047857" },
+  { label: "Home Services",     value: "home_services",      color: "#b45309" },
+  { label: "Education",         value: "education",          color: colors.purple },
+  { label: "Health & Wellness", value: "health_wellness",    color: "#7B1FA2" },
+  { label: "Other",             value: "other",              color: "#6b7280" },
 ];
 
 function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNavigate }) {
@@ -216,7 +216,7 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
 
                   <div style={s.cardMeta}>
                     {service.category && (
-                      <span style={s.cardCategory}>{service.category}</span>
+                      <span style={s.cardCategory}>{CATEGORY_LABELS[service.category] || service.category}</span>
                     )}
                     {service.is_remote ? (
                       <span style={s.remoteBadge}>Remote</span>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../api";
-import { colors } from "../constants";
+import { colors, CATEGORY_LABELS } from "../constants";
 
 const STATUS_COLOR = {
   confirmed: "#22c55e",
@@ -207,7 +207,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                           onClick={() => onSelectService?.(svc.id)}
                         >
                           <p style={s.rowTitle}>{svc.title}</p>
-                          <p style={s.rowSub}>{svc.category}</p>
+                          <p style={s.rowSub}>{CATEGORY_LABELS[svc.category] || svc.category}</p>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
                           <span style={{ fontSize: "13px", fontWeight: "700", color: colors.purple }}>${svc.price}</span>
@@ -402,7 +402,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
                       <p style={{ fontSize: "12.5px", fontWeight: "600", color: colors.dark, margin: "0 0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {svc.title}
                       </p>
-                      <p style={{ fontSize: "11px", color: "#bbb", margin: 0 }}>{svc.category}</p>
+                      <p style={{ fontSize: "11px", color: "#bbb", margin: 0 }}>{CATEGORY_LABELS[svc.category] || svc.category}</p>
                     </div>
                     <span style={{ fontSize: "13px", fontWeight: "700", color: colors.purple, flexShrink: 0 }}>
                       ${svc.price}

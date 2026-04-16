@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { apiFetch } from "../api";
+import { apiFetch, releaseEscrow, refundBooking } from "../api";
 import { colors } from "../constants";
 
 const STATUS_STYLE = {
-  pending: { bg: "#fffbeb", color: "#b45309", border: "#fde68a", label: "Pending" },
-  confirmed: { bg: "#ecfdf5", color: "#047857", border: "#a7f3d0", label: "Confirmed" },
-  completed: { bg: colors.purpleSoft, color: colors.purple, border: "#d4c8ff", label: "Completed" },
-  cancelled: { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
+  pending:     { bg: "#fffbeb", color: "#b45309", border: "#fde68a", label: "Pending" },
+  confirmed:   { bg: "#ecfdf5", color: "#047857", border: "#a7f3d0", label: "Confirmed" },
+  paid:        { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe", label: "Paid" },
+  in_progress: { bg: "#fff7ed", color: "#c2410c", border: "#fed7aa", label: "In Progress" },
+  delivered:   { bg: "#f0fdfa", color: "#0f766e", border: "#99f6e4", label: "Delivered" },
+  completed:   { bg: colors.purpleSoft, color: colors.purple, border: "#d4c8ff", label: "Completed" },
+  cancelled:   { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
 };
 
 function formatWhen(iso) {
@@ -25,9 +28,10 @@ function BookingsPage({ currentUser, onPay }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [tab, setTab] = useState("client"); 
+  const [tab, setTab] = useState("client");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionId, setActionId] = useState(null);
+  const [actionError, setActionError] = useState({});
 
   const load = useCallback(() => {
     if (!currentUser) {
@@ -58,12 +62,13 @@ function BookingsPage({ currentUser, onPay }) {
     return true;
   });
 
-  async function patchStatus(id, status) {
+  async function patchStatus(id, newStatus) {
     setActionId(id);
+    setActionError((prev) => ({ ...prev, [id]: "" }));
     try {
       const res = await apiFetch(`/bookings/${id}/`, {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -71,7 +76,41 @@ function BookingsPage({ currentUser, onPay }) {
       }
       await load();
     } catch (e) {
-      alert(e.message || "Could not update booking");
+      setActionError((prev) => ({ ...prev, [id]: e.message || "Something went wrong" }));
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleRelease(id) {
+    setActionId(id);
+    setActionError((prev) => ({ ...prev, [id]: "" }));
+    try {
+      const res = await releaseEscrow(id);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Could not release payment");
+      }
+      await load();
+    } catch (e) {
+      setActionError((prev) => ({ ...prev, [id]: e.message || "Something went wrong" }));
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleRefund(id) {
+    setActionId(id);
+    setActionError((prev) => ({ ...prev, [id]: "" }));
+    try {
+      const res = await refundBooking(id);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Could not process refund");
+      }
+      await load();
+    } catch (e) {
+      setActionError((prev) => ({ ...prev, [id]: e.message || "Something went wrong" }));
     } finally {
       setActionId(null);
     }
@@ -126,7 +165,7 @@ function BookingsPage({ currentUser, onPay }) {
       </div>
 
       <div style={s.filters}>
-        {["all", "pending", "confirmed", "completed", "cancelled"].map((st) => (
+        {["all", "pending", "confirmed", "paid", "in_progress", "delivered", "completed", "cancelled"].map((st) => (
           <button
             key={st}
             type="button"
@@ -197,47 +236,66 @@ function BookingsPage({ currentUser, onPay }) {
                   </p>
                 )}
 
+                {actionError[b.id] && (
+                  <p style={s.cardErr}>{actionError[b.id]}</p>
+                )}
+
+                {/* Provider actions */}
                 {b.viewer_role === "provider" && b.status === "pending" && (
                   <div style={s.actions}>
-                    <button
-                      type="button"
-                      style={s.btnDecline}
-                      disabled={busy}
-                      onClick={() => patchStatus(b.id, "cancelled")}
-                    >
+                    <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
                       Decline
                     </button>
-                    <button
-                      type="button"
-                      style={s.btnConfirm}
-                      disabled={busy}
-                      onClick={() => patchStatus(b.id, "confirmed")}
-                    >
+                    <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "confirmed")}>
                       {busy ? "…" : "Confirm"}
                     </button>
                   </div>
                 )}
 
+                {b.viewer_role === "provider" && b.status === "paid" && (
+                  <div style={s.actions}>
+                    <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "in_progress")}>
+                      {busy ? "…" : "Mark as started"}
+                    </button>
+                  </div>
+                )}
+
+                {b.viewer_role === "provider" && b.status === "in_progress" && (
+                  <div style={s.actions}>
+                    <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "delivered")}>
+                      {busy ? "…" : "Mark as delivered"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Client actions */}
                 {b.viewer_role === "requester" && (b.status === "pending" || b.status === "confirmed") && (
                   <div style={s.actions}>
-                    <button
-                      type="button"
-                      style={s.btnDecline}
-                      disabled={busy}
-                      onClick={() => patchStatus(b.id, "cancelled")}
-                    >
-                      Cancel booking
+                    <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
+                      Cancel
                     </button>
-                    {onPay && (
-                      <button
-                        type="button"
-                        style={s.btnPay}
-                        disabled={busy}
-                        onClick={() => onPay(b)}
-                      >
+                    {onPay && b.status === "confirmed" && (
+                      <button type="button" style={s.btnPay} disabled={busy} onClick={() => onPay(b)}>
                         Pay now
                       </button>
                     )}
+                  </div>
+                )}
+
+                {b.viewer_role === "requester" && (b.status === "paid" || b.status === "in_progress") && (
+                  <div style={s.actions}>
+                    <button type="button" style={s.btnDecline} disabled={busy} onClick={() => handleRefund(b.id)}>
+                      {busy ? "…" : "Cancel & refund"}
+                    </button>
+                  </div>
+                )}
+
+                {b.viewer_role === "requester" && b.status === "delivered" && (
+                  <div style={s.actions}>
+                    <p style={s.deliveredNote}>Work marked as done — release payment?</p>
+                    <button type="button" style={s.btnPay} disabled={busy} onClick={() => handleRelease(b.id)}>
+                      {busy ? "…" : "Release payment"}
+                    </button>
                   </div>
                 )}
               </article>
@@ -423,6 +481,19 @@ const s = {
     fontWeight: "600",
     cursor: "pointer",
     fontFamily: "'Poppins', sans-serif",
+  },
+  cardErr: {
+    fontSize: "12px",
+    color: "#dc2626",
+    margin: "4px 0 8px",
+    textAlign: "right",
+  },
+  deliveredNote: {
+    fontSize: "12px",
+    color: "#888",
+    margin: 0,
+    flex: 1,
+    alignSelf: "center",
   },
   empty: {
     padding: "28px",

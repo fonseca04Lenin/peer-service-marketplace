@@ -23,7 +23,8 @@ class User(AbstractUser):
     country = models.CharField(max_length=100)
     skills = models.TextField(blank=True)  # stored as comma-separated values
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
-    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    wallet_balance  = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    escrow_balance  = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     profile_public = models.BooleanField(default=True)
     messaging_pref = models.CharField(max_length=20, choices=MESSAGING_CHOICES, default='anyone')
     phone   = models.CharField(max_length=30, blank=True)

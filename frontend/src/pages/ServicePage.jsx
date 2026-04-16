@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiFetch, getToken } from "../api";
-import { colors } from "../constants";
+import { colors, CATEGORY_LABELS } from "../constants";
 
 function defaultLocalDatetime() {
   const d = new Date();
@@ -172,7 +172,7 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
           </div>
 
           <div style={s.badges}>
-            {service.category && <span style={s.catBadge}>{service.category}</span>}
+            {service.category && <span style={s.catBadge}>{CATEGORY_LABELS[service.category] || service.category}</span>}
             {service.is_remote ? (
               <span style={s.remoteBadge}>Remote</span>
             ) : (

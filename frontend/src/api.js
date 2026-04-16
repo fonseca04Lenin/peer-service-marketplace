@@ -24,3 +24,17 @@ export function apiFetch(path, options = {}) {
     },
   });
 }
+
+export function releaseEscrow(bookingId) {
+  return apiFetch("/payments/release-escrow/", {
+    method: "POST",
+    body: JSON.stringify({ booking_id: bookingId }),
+  });
+}
+
+export function refundBooking(bookingId) {
+  return apiFetch("/payments/refund-booking/", {
+    method: "POST",
+    body: JSON.stringify({ booking_id: bookingId }),
+  });
+}
