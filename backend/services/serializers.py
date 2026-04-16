@@ -20,7 +20,8 @@ class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = ['id', 'title', 'description', 'category', 'price',
-                  'image', 'service_area', 'is_remote', 'is_active', 'created_at',
+                  'image', 'service_area', 'latitude', 'longitude',
+                  'is_remote', 'is_active', 'created_at',
                   'provider', 'average_rating', 'review_count']
         read_only_fields = ['id', 'created_at', 'provider', 'is_active']
         extra_kwargs = {
