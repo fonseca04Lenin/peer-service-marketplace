@@ -2,16 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { apiFetch } from "../api";
 import { colors } from "../constants";
 import ServicePage from "./ServicePage";
+import CityAutocomplete from "../components/CityAutocomplete";
+import { reverseGeocode } from "../utils/location";
 
 const POPULAR_CATEGORIES = [
-  { label: "Tech Services",      value: "tech_services",      color: colors.purple },
-  { label: "Creative Services",  value: "creative_services",  color: "#7B1FA2" },
-  { label: "Home Services",      value: "home_services",      color: colors.dark },
-  { label: "Education",          value: "education",          color: "#047857" },
-  { label: "Health & Wellness",  value: "health_wellness",    color: "#b45309" },
-  { label: "Financial Services", value: "financial_services", color: "#0369a1" },
-  { label: "Business Services",  value: "business_services",  color: "#be123c" },
-  { label: "Other",              value: "other",              color: "#6b7280" },
+  { label: "Tutoring",     value: "tutoring",  color: colors.purple },
+  { label: "Handyman",     value: "handyman",  color: "#7B1FA2" },
+  { label: "Tech Help",    value: "tech",      color: colors.dark },
+  { label: "Creative Work",value: "creative",  color: "#047857" },
+  { label: "Home Care",    value: "home",      color: "#b45309" },
+  { label: "Other",        value: "other",     color: "#6b7280" },
 ];
 
 function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNavigate }) {
@@ -19,20 +19,48 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
   const [selectedId,      setSelectedId]      = useState(null);
   const [query,           setQuery]           = useState("");
   const [location,        setLocation]        = useState("");
+  const [selLat,          setSelLat]          = useState(null);
+  const [selLng,          setSelLng]          = useState(null);
   const [activeCategory,  setActiveCategory]  = useState(null);
   const [loading,         setLoading]         = useState(true);
+  const [geoStatus,       setGeoStatus]       = useState('idle');
 
   const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    setGeoStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        setGeoStatus('granted');
+        const { latitude, longitude } = pos.coords;
+        setSelLat(latitude);
+        setSelLng(longitude);
+        try {
+          const name = await reverseGeocode(latitude, longitude);
+          if (name) setLocation(name);
+        } catch {}
+      },
+      () => setGeoStatus('denied'),
+      { timeout: 8000 }
+    );
+  }, []);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setLoading(true);
       const params = new URLSearchParams();
-      if (query.trim())        params.set("q",        query.trim());
-      if (activeCategory)      params.set("category", activeCategory);
-      if (location.trim())     params.set("location", location.trim());
-      const qs   = params.toString() ;
+      if (query.trim())   params.set("q",        query.trim());
+      if (activeCategory) params.set("category", activeCategory);
+      if (selLat !== null && selLng !== null) {
+        params.set("user_lat", selLat);
+        params.set("user_lng", selLng);
+        if (location.trim()) params.set("location", location.trim());
+      } else if (location.trim()) {
+        params.set("location", location.trim());
+      }
+      const qs   = params.toString();
       const path = qs ? `/services/?${qs}` : "/services/";
       apiFetch(path)
         .then(res => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
@@ -41,7 +69,7 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
         .finally(() => setLoading(false));
     }, 400);
     return () => clearTimeout(debounceRef.current);
-  }, [query, location, activeCategory, servicesRefreshKey]);
+  }, [query, location, selLat, selLng, activeCategory, servicesRefreshKey]);
   function toggleCategory(value) {
     setActiveCategory(prev => (prev === value ? null : value)) ;
   }
@@ -75,13 +103,22 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
           onChange={e => setQuery(e.target.value)}
           style={{ ...s.input, flex: 2 }}
         />
-        <input
-          type="text"
-          placeholder="City, State"
-          value={location}
-          onChange={e => setLocation(e.target.value)}
-          style={{ ...s.input, flex: 1 }}
-        />
+        <div style={{ flex: 1, position: 'relative' }}>
+          <CityAutocomplete
+            value={location}
+            onSelect={(name, lat, lng) => {
+              setLocation(name);
+              setSelLat(lat);
+              setSelLng(lng);
+              setGeoStatus('idle');
+            }}
+            placeholder="City, State"
+            inputStyle={{ ...s.input, width: '100%', boxSizing: 'border-box', paddingRight: geoStatus === 'requesting' ? '36px' : undefined }}
+          />
+          {geoStatus === 'requesting' && (
+            <span style={s.geoSpinner} />
+          )}
+        </div>
       </div>
 
       {activeCategory && (
@@ -357,6 +394,20 @@ const s = {
   dim: {
     fontSize: "13px",
     color: "#aaa",
+  },
+  geoSpinner: {
+    position: "absolute",
+    right: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "14px",
+    height: "14px",
+    border: "2px solid #dde3ea",
+    borderTopColor: colors.purple,
+    borderRadius: "50%",
+    display: "inline-block",
+    animation: "spin 0.7s linear infinite",
+    pointerEvents: "none",
   },
 };
 

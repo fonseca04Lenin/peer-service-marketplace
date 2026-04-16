@@ -30,8 +30,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [servicePrice, setServicePrice] = useState('');
   const [rateType, setRateType] = useState('hour');
   const [serviceDesc, setServiceDesc] = useState('');
-  const [serviceArea, setServiceArea] = useState('');
-  const [isRemote, setIsRemote] = useState(false);
   const [serviceImage, setServiceImage] = useState(null);
   const [serviceImageFile, setServiceImageFile] = useState(null);
 
@@ -118,8 +116,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
       svcData.append('description', serviceDesc.trim());
       svcData.append('category', serviceCategory);
       svcData.append('price', String(parseFloat(servicePrice)));
-      svcData.append('service_area', isRemote ? '' : serviceArea.trim());
-      svcData.append('is_remote', isRemote ? 'true' : 'false');
       svcData.append('image', serviceImageFile);
       const svcRes = await apiFetch('/services/create/', { method: 'POST', body: svcData });
       if (!svcRes.ok) {
@@ -173,15 +169,11 @@ function ProviderOnboarding({ onFinish, onBack }) {
       return;
     }
     if (step === 4) {
-      if (!isRemote && !serviceArea.trim()) {
-        setSaveError('Please enter a service area or check "This service can be done remotely".');
-        return;
-      }
       if (!serviceTitle.trim()) {
         setSaveError('Please enter a service title.');
         return;
       }
-      const priceNum = parseFloat(servicePrice, 10);
+      const priceNum = parseFloat(servicePrice);
       if (servicePrice.trim() === '' || Number.isNaN(priceNum) || priceNum < 0) {
         setSaveError('Please enter a valid price (0 or more).');
         return;
@@ -505,30 +497,6 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     }}
                   />
 
-                  <div style={styles.remoteRow}>
-                    <label style={styles.remoteLabel}>
-                      <input
-                        type="checkbox"
-                        checked={isRemote}
-                        onChange={(e) => setIsRemote(e.target.checked)}
-                        style={{ marginRight: '8px', accentColor: colors.purple }}
-                      />
-                      This service can be done remotely
-                    </label>
-                  </div>
-
-                  {!isRemote && (
-                    <>
-                      <label style={styles.label}>Service area <span style={{ color: 'red' }}>*</span></label>
-                      <input
-                        type="text"
-                        value={serviceArea}
-                        onChange={(e) => setServiceArea(e.target.value)}
-                        placeholder="e.g. Austin, TX"
-                        style={styles.input}
-                      />
-                    </>
-                  )}
                 </div>
               )}
 
@@ -814,18 +782,6 @@ const styles = {
     height: '100%',
     objectFit: 'cover',
   },
-  remoteRow: {
-    marginBottom: '20px',
-  },
-  remoteLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    fontSize: '14px',
-    color: '#444',
-    cursor: 'pointer',
-    fontWeight: '500',
-  },
-
   select: {
     width: '100%',
     padding: '12px 14px',

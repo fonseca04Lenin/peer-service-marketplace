@@ -1,3 +1,5 @@
+import math
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -28,7 +30,31 @@ def list_services(request):
         services = services.filter(provider_id=provider_id)
 
     location = request.query_params.get('location')
-    if location:
+    user_lat = request.query_params.get('user_lat')
+    user_lng = request.query_params.get('user_lng')
+
+    if user_lat and user_lng:
+        try:
+            user_lat = float(user_lat)
+            user_lng = float(user_lng)
+            radius_km = 80
+            lat_delta = radius_km / 111.0
+            lng_delta = radius_km / (111.0 * max(abs(math.cos(math.radians(user_lat))), 1e-6))
+            geo_q = (
+                Q(
+                    latitude__gte=user_lat - lat_delta,
+                    latitude__lte=user_lat + lat_delta,
+                    longitude__gte=user_lng - lng_delta,
+                    longitude__lte=user_lng + lng_delta,
+                ) | Q(is_remote=True) | Q(latitude__isnull=True)
+            )
+            if location:
+                geo_q |= Q(service_area__icontains=location)
+            services = services.filter(geo_q)
+        except (ValueError, TypeError):
+            if location:
+                services = services.filter(Q(service_area__icontains=location) | Q(is_remote=True))
+    elif location:
         services = services.filter(
             Q(service_area__icontains=location) | Q(is_remote=True)
         )
