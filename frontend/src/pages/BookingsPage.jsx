@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch, releaseEscrow, refundBooking } from "../api";
 import { colors } from "../constants";
+import { useAuth } from "../contexts/AuthContext";
+import { formatWhen } from "../utils/format";
 
 const STATUS_STYLE = {
   pending:     { bg: "#fffbeb", color: "#b45309", border: "#fde68a", label: "Pending" },
@@ -12,19 +14,8 @@ const STATUS_STYLE = {
   cancelled:   { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
 };
 
-function formatWhen(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function BookingsPage({ currentUser, onPay }) {
+function BookingsPage({ onPay }) {
+  const currentUser = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -89,7 +80,7 @@ function BookingsPage({ currentUser, onPay }) {
       const res = await releaseEscrow(id);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Could not release payment");
+        throw new Error(err.detail || err.error || "Could not release payment");
       }
       await load();
     } catch (e) {
@@ -106,7 +97,7 @@ function BookingsPage({ currentUser, onPay }) {
       const res = await refundBooking(id);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Could not process refund");
+        throw new Error(err.detail || err.error || "Could not process refund");
       }
       await load();
     } catch (e) {

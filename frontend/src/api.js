@@ -38,3 +38,7 @@ export function refundBooking(bookingId) {
     body: JSON.stringify({ booking_id: bookingId }),
   });
 }
+
+export function parseApiError(data, fallback = "Something went wrong.") {
+  return data.detail || data.error || fallback;
+}

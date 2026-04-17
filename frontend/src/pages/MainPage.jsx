@@ -156,8 +156,8 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
                 onNavigate={setActive}
               />
             )}
-            {active === 'Bookings'  && <BookingsPage currentUser={currentUser} onPay={setPayingBooking} />}
-            {active === 'Messages'  && <MessagesPage currentUser={currentUser} />}
+            {active === 'Bookings'  && <BookingsPage onPay={setPayingBooking} />}
+            {active === 'Messages'  && <MessagesPage />}
             {active === 'Reviews'   && <ReviewsPage  currentUser={currentUser} />}
             {active === 'Settings'  && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
             {active === 'Wallet'    && <WalletPage />}

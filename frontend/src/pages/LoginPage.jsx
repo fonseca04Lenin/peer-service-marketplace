@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { saveToken } from '../api';
+import { apiFetch, saveToken } from '../api';
 import { colors } from '../constants';
 
 function LoginPage({ onLogin, onGoToSignUp, onBack }) {
@@ -10,20 +10,20 @@ function LoginPage({ onLogin, onGoToSignUp, onBack }) {
 
   async function handleSubmit() {
     setError('');
-    if (!username || !password) {
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername || !password) {
       setError('Please fill in all fields.');
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch('/api/users/login/', {
+      const res = await apiFetch('/users/login/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: trimmedUsername, password }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Login failed.');
+        setError(data.detail || data.error || 'Login failed.');
         return;
       }
       saveToken(data.token);

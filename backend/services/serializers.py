@@ -4,18 +4,30 @@ from users.serializers import UserSerializer
 from .models import Service
 
 
+def annotate_ratings(qs):
+    return qs.annotate(
+        _avg_rating=Avg("bookings__review__rating"),
+        _review_count=Count("bookings__review", distinct=True),
+    )
+
+
 class ServiceSerializer(serializers.ModelSerializer):
     provider       = UserSerializer(read_only=True)
     average_rating = serializers.SerializerMethodField()
     review_count   = serializers.SerializerMethodField()
 
     def get_average_rating(self, obj):
-        result = obj.bookings.filter(review__isnull=False).aggregate(avg=Avg('review__rating'))
-        avg = result['avg']
+        avg = getattr(obj, "_avg_rating", None)
+        if avg is None:
+            result = obj.bookings.filter(review__isnull=False).aggregate(avg=Avg("review__rating"))
+            avg = result["avg"]
         return round(avg, 1) if avg else None
 
     def get_review_count(self, obj):
-        return obj.bookings.filter(review__isnull=False).aggregate(n=Count('review'))['n']
+        count = getattr(obj, "_review_count", None)
+        if count is None:
+            return obj.bookings.filter(review__isnull=False).aggregate(n=Count("review"))["n"]
+        return count
 
     class Meta:
         model = Service

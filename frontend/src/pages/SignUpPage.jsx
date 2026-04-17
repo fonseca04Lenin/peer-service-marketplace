@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { saveToken } from '../api';
+import { apiFetch, saveToken } from '../api';
 import { COUNTRIES, colors } from '../constants';
 
 function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
@@ -21,18 +21,28 @@ function SignUpPage({ onSignUp, onGoToLogin, onBack }) {
       return;
     }
 
+    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRx.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch('/api/users/register/', {
+      const res = await apiFetch('/users/register/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username,
-          email,
+          username: username.trim(),
+          email:    email.trim(),
           password,
-          first_name: firstName,
-          last_name:  lastName,
+          first_name: firstName.trim(),
+          last_name:  lastName.trim(),
           country,
           city,
         }),

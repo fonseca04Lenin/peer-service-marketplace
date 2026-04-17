@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getToken, clearToken, apiFetch } from './api';
+import { AuthProvider } from './contexts/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
@@ -66,12 +67,14 @@ function App() {
   }
   if (page === 'main') {
     return (
-      <MainPage
-        currentUser={user}
-        onLogout={handleLogout}
-        onStartOnboarding={() => setPage('provider-onboarding')}
-        servicesRefreshKey={servicesRefreshKey}
-      />
+      <AuthProvider user={user}>
+        <MainPage
+          currentUser={user}
+          onLogout={handleLogout}
+          onStartOnboarding={() => setPage('provider-onboarding')}
+          servicesRefreshKey={servicesRefreshKey}
+        />
+      </AuthProvider>
     );
   }
   if (page === 'login')               return <LoginPage onLogin={handleLogin} onGoToSignUp={() => setPage('signup')} onBack={() => setPage('landing')} />;

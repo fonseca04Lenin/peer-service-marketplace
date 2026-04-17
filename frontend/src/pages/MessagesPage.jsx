@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { apiFetch } from "../api";
 import { colors } from "../constants";
+import { useAuth } from "../contexts/AuthContext";
+import { formatSidebarTime, formatBubbleTime, formatDateLabel } from "../utils/format";
 
 function displayName(u) {
   if (!u) return "Unknown";
@@ -10,31 +12,6 @@ function displayName(u) {
 function getInitials(u) {
   const name = displayName(u);
   return name.split(" ").filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase() || "?";
-}
-
-function formatSidebarTime(iso) {
-  if (!iso) return "";
-  const d    = new Date(iso);
-  const now  = new Date();
-  const diff = Math.floor((now - d) / 86400000);
-  if (diff === 0) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  if (diff === 1) return "Yesterday";
-  if (diff < 7)  return d.toLocaleDateString([], { weekday: "short" });
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-function formatBubbleTime(iso) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
-function formatDateLabel(iso) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Yesterday";
-  return d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
 }
 
 function Avatar({ user, size = 36 }) {
@@ -64,7 +41,8 @@ function Avatar({ user, size = 36 }) {
   );
 }
 
-function MessagesPage({ currentUser }) {
+function MessagesPage() {
+  const currentUser = useAuth();
   const [conversations,  setConversations]  = useState([]);
   const [loadingConvos,  setLoadingConvos]  = useState(true);
   const [activeUserId,   setActiveUserId]   = useState(null);
@@ -75,11 +53,18 @@ function MessagesPage({ currentUser }) {
   const [sendError,      setSendError]      = useState("");
   const [safetyDismissed, setSafetyDismissed] = useState(false);
 
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  const bottomRef  = useRef(null);
+  const inputRef   = useRef(null);
+  const visibleRef = useRef(!document.hidden);
   const myId = currentUser?.id ?? currentUser?.pk;
 
   const activeConvo = conversations.find(c => c.other_user?.id === activeUserId);
+
+  useEffect(() => {
+    function onVisibilityChange() { visibleRef.current = !document.hidden; }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   const loadConversations = useCallback(() => {
     apiFetch("/messaging/")
@@ -96,13 +81,16 @@ function MessagesPage({ currentUser }) {
 
   useEffect(() => {
     if (!currentUser) return;
-    const id = setInterval(loadConversations, 6000);
+    const id = setInterval(() => {
+      if (visibleRef.current) loadConversations();
+    }, 6000);
     return () => clearInterval(id);
   }, [currentUser, loadConversations]);
 
   useEffect(() => {
     if (!activeUserId) return;
     const id = setInterval(() => {
+      if (!visibleRef.current) return;
       apiFetch(`/messaging/${activeUserId}/`)
         .then(r => (r.ok ? r.json() : null))
         .then(data => {

@@ -14,6 +14,33 @@ def _booking_qs():
     )
 
 
+def _apply_status_transition(booking, new_status, is_provider, is_requester):
+    if booking.status == 'cancelled':
+        return 'This booking is already cancelled.'
+
+    if is_provider:
+        allowed = {
+            'pending':     ('confirmed', 'cancelled'),
+            'paid':        ('in_progress',),
+            'in_progress': ('delivered',),
+        }
+        if new_status not in allowed.get(booking.status, ()):
+            return 'Invalid status transition.'
+        booking.status = new_status
+
+    elif is_requester:
+        if new_status != 'cancelled':
+            return 'Clients can only cancel. Use the release or refund endpoints for paid bookings.'
+        if booking.status not in ('pending', 'confirmed'):
+            return 'This booking cannot be cancelled here. Use the refund endpoint if you have already paid.'
+        booking.status = 'cancelled'
+
+    else:
+        return 'Not found.'
+
+    return None
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def booking_list_create(request):
@@ -76,26 +103,9 @@ def booking_detail(request, pk):
     is_provider = uid == booking.service.provider_id
     is_requester = uid == booking.requester_id
 
-    if booking.status == 'cancelled':
-        return Response({'detail': 'This booking is already cancelled.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if is_provider:
-        if booking.status == 'pending' and new_status in ('confirmed', 'cancelled'):
-            booking.status = new_status
-        elif booking.status == 'paid' and new_status == 'in_progress':
-            booking.status = 'in_progress'
-        elif booking.status == 'in_progress' and new_status == 'delivered':
-            booking.status = 'delivered'
-        else:
-            return Response({'detail': 'Invalid status transition.'}, status=status.HTTP_400_BAD_REQUEST)
-    elif is_requester:
-        if new_status != 'cancelled':
-            return Response({'detail': 'Clients can only cancel. Use the release or refund endpoints for paid bookings.'}, status=status.HTTP_400_BAD_REQUEST)
-        if booking.status not in ('pending', 'confirmed'):
-            return Response({'detail': 'This booking cannot be cancelled here. Use the refund endpoint if you have already paid.'}, status=status.HTTP_400_BAD_REQUEST)
-        booking.status = 'cancelled'
-    else:
-        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    error = _apply_status_transition(booking, new_status, is_provider, is_requester)
+    if error:
+        return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
 
     booking.save()
     booking = _booking_qs().get(pk=booking.pk)

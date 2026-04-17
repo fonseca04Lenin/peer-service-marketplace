@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "../api";
 import { colors } from "../constants";
+import { formatDate } from "../utils/format";
 
 const TYPE_META = {
   deposit:      { label: "Added funds",        sign: "+", color: "#16a34a" },
@@ -19,10 +20,62 @@ const STATUS_LABEL = {
   cancelled: "cancelled",
 };
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
+function FundForm({ title, endpoint, min, max, btnVariant, submitLabel, successMsg, hint, onSuccess }) {
+  const [amount, setAmount] = useState("");
+  const [busy,   setBusy]   = useState(false);
+  const [err,    setErr]    = useState("");
+  const [ok,     setOk]     = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setErr("");
+    setOk(false);
+    const amt = parseFloat(amount);
+    if (!amount || isNaN(amt) || amt <= 0) {
+      setErr("Enter a valid amount.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res  = await apiFetch(endpoint, { method: "POST", body: JSON.stringify({ amount: amt }) });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.detail || data.error || "Request failed."); return; }
+      setAmount("");
+      setOk(true);
+      onSuccess(data);
+    } catch {
+      setErr("Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={s.panel}>
+      <p style={s.panelTitle}>{title}</p>
+      <form onSubmit={handleSubmit}>
+        <div style={s.amtField}>
+          <span style={s.currency}>$</span>
+          <input
+            type="number"
+            min={min}
+            max={max}
+            step="0.01"
+            placeholder="0.00"
+            value={amount}
+            onChange={e => { setAmount(e.target.value); setErr(""); setOk(false); }}
+            style={s.amtInput}
+          />
+        </div>
+        {err && <p style={s.errMsg}>{err}</p>}
+        {ok  && <p style={s.okMsg}>{successMsg}</p>}
+        <button type="submit" style={btnVariant === "ghost" ? s.btnGhost : s.btnFilled} disabled={busy}>
+          {busy ? "Processing…" : submitLabel}
+        </button>
+        <p style={s.hint}>{hint}</p>
+      </form>
+    </div>
+  );
 }
 
 function WalletPage() {
@@ -30,17 +83,6 @@ function WalletPage() {
   const [escrow,      setEscrow]      = useState(null);
   const [txns,        setTxns]        = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
-
-  // this isthe deposit form state!!!!
-  const [depositAmt,  setDepositAmt]  = useState("");
-  const [depositing,  setDepositing]  = useState(false);
-  const [depositErr,  setDepositErr]  = useState("");
-  const [depositOk,   setDepositOk]   = useState(false);
-  // thsis is the withdraw one!!
-  const [withdrawAmt, setWithdrawAmt] = useState("");
-  const [withdrawing, setWithdrawing] = useState(false);
-  const [withdrawErr, setWithdrawErr] = useState("");
-  const [withdrawOk,  setWithdrawOk]  = useState(false);
 
   const load = useCallback(() => {
     setPageLoading(true);
@@ -59,66 +101,6 @@ function WalletPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  async function handleDeposit(e) {
-    e.preventDefault();
-    setDepositErr("");
-    setDepositOk(false);
-
-    const amt = parseFloat(depositAmt);
-    if (!depositAmt || isNaN(amt) || amt <= 0) {
-      setDepositErr("Enter a valid amount.");
-      return;
-    }
-
-    setDepositing(true);
-    try {
-      const res  = await apiFetch("/payments/deposit/", {
-        method: "POST",
-        body: JSON.stringify({ amount: amt }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setDepositErr(data.error || "Deposit failed."); return; }
-      setBalance(data.balance);
-      setDepositAmt("");
-      setDepositOk(true);
-      load();
-    } catch {
-      setDepositErr("Something went wrong. Try again.");
-    } finally {
-      setDepositing(false);
-    }
-  }
-
-  async function handleWithdraw(e) {
-    e.preventDefault();
-    setWithdrawErr("");
-    setWithdrawOk(false);
-
-    const amt = parseFloat(withdrawAmt);
-    if (!withdrawAmt || isNaN(amt) || amt <= 0) {
-      setWithdrawErr("Enter a valid amount.");
-      return;
-    }
-
-    setWithdrawing(true);
-    try {
-      const res  = await apiFetch("/payments/withdraw/", {
-        method: "POST",
-        body: JSON.stringify({ amount: amt }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setWithdrawErr(data.error || "Withdrawal failed."); return; }
-      setBalance(data.new_balance);
-      setWithdrawAmt("");
-      setWithdrawOk(true);
-      load();
-    } catch {
-      setWithdrawErr("Something went wrong. Try again.");
-    } finally {
-      setWithdrawing(false);
-    }
-  }
 
   if (pageLoading) {
     return <div style={s.page}><p style={s.muted}>Loading…</p></div>;
@@ -153,64 +135,27 @@ function WalletPage() {
       </div>
 
       <div style={s.actionRow}>
-
-        <div style={s.panel}>
-          <p style={s.panelTitle}>Add funds</p>
-          <form onSubmit={handleDeposit}>
-            <div style={s.amtField}>
-              <span style={s.currency}>$</span>
-              <input
-                type="number"
-                min="5"
-                max="5000"
-                step="0.01"
-                placeholder="0.00"
-                value={depositAmt}
-                onChange={e => {
-                  setDepositAmt(e.target.value);
-                  setDepositErr("");
-                  setDepositOk(false);
-                }}
-                style={s.amtInput}
-              />
-            </div>
-            {depositErr && <p style={s.errMsg}>{depositErr}</p>}
-            {depositOk  && <p style={s.okMsg}>Funds added successfully.</p>}
-            <button type="submit" style={s.btnFilled} disabled={depositing}>
-              {depositing ? "Processing…" : "Add to wallet"}
-            </button>
-            <p style={s.hint}>Minimum $5 · Maximum $5,000 per deposit</p>
-          </form>
-        </div>
-
-        <div style={s.panel}>
-          <p style={s.panelTitle}>Withdraw earnings</p>
-          <form onSubmit={handleWithdraw}>
-            <div style={s.amtField}>
-              <span style={s.currency}>$</span>
-              <input
-                type="number"
-                min="10"
-                step="0.01"
-                placeholder="0.00"
-                value={withdrawAmt}
-                onChange={e => {
-                  setWithdrawAmt(e.target.value);
-                  setWithdrawErr("");
-                  setWithdrawOk(false);
-                }}
-                style={s.amtInput}
-              />
-            </div>
-            {withdrawErr && <p style={s.errMsg}>{withdrawErr}</p>}
-            {withdrawOk  && <p style={s.okMsg}>Withdrawal requested. Allow 3–5 business days.</p>}
-            <button type="submit" style={s.btnGhost} disabled={withdrawing}>
-              {withdrawing ? "Processing…" : "Request withdrawal"}
-            </button>
-            <p style={s.hint}>Minimum $10 · Processed in 3–5 business days</p>
-          </form>
-        </div>
-
+        <FundForm
+          title="Add funds"
+          endpoint="/payments/deposit/"
+          min="5"
+          max="5000"
+          btnVariant="filled"
+          submitLabel="Add to wallet"
+          successMsg="Funds added successfully."
+          hint="Minimum $5 · Maximum $5,000 per deposit"
+          onSuccess={data => { setBalance(data.balance); load(); }}
+        />
+        <FundForm
+          title="Withdraw earnings"
+          endpoint="/payments/withdraw/"
+          min="10"
+          btnVariant="ghost"
+          submitLabel="Request withdrawal"
+          successMsg="Withdrawal requested. Allow 3–5 business days."
+          hint="Minimum $10 · Processed in 3–5 business days"
+          onSuccess={data => { setBalance(data.new_balance); load(); }}
+        />
       </div>
 
       {/* transaction history Code */}

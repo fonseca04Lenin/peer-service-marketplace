@@ -41,6 +41,8 @@ function ProviderOnboarding({ onFinish, onBack }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
   const photoRef = useRef(null);
   const serviceImageRef = useRef(null);
 
@@ -70,11 +72,14 @@ function ProviderOnboarding({ onFinish, onBack }) {
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo);
-      setPhoto(URL.createObjectURL(file));
-      setPhotoFile(file);
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      setSaveError("Profile photo must be under 5 MB.");
+      return;
     }
+    if (photo && photo.startsWith('blob:')) URL.revokeObjectURL(photo);
+    setPhoto(URL.createObjectURL(file));
+    setPhotoFile(file);
   };
 
   const handleSkillKey = (e) => {
@@ -541,10 +546,13 @@ function ProviderOnboarding({ onFinish, onBack }) {
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       const file = e.target.files[0];
-                      if (file) {
-                        setServiceImage(URL.createObjectURL(file));
-                        setServiceImageFile(file);
+                      if (!file) return;
+                      if (file.size > MAX_FILE_SIZE) {
+                        setSaveError("Service photo must be under 5 MB.");
+                        return;
                       }
+                      setServiceImage(URL.createObjectURL(file));
+                      setServiceImageFile(file);
                     }}
                   />
 
