@@ -180,26 +180,32 @@ function BookingsPage({ onPay }) {
       ) : (
         <div style={s.grid}>
           {filtered.map((b) => {
-            const st = STATUS_STYLE[b.status] || STATUS_STYLE.pending;
+            const listingDeleted = !b.service;
+            const st = listingDeleted
+              ? STATUS_STYLE.cancelled
+              : STATUS_STYLE[b.status] || STATUS_STYLE.pending;
             const svc = b.service || {};
             const req = b.requester || {};
             const clientName =
               `${req.first_name || ""} ${req.last_name || ""}`.trim() || req.username || "Client";
             const busy = actionId === b.id;
+            const priceLabel = svc.price != null
+              ? `$${svc.price}${svc.rate_type !== 'flat' ? '/hr' : ''}`
+              : "—";
 
             return (
               <article key={b.id} style={s.card}>
                 <div style={s.cardTop}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={s.cardTitle}>{svc.title || "Service"}</h2>
+                    <h2 style={s.cardTitle}>{svc.title || "Service no longer available"}</h2>
                     <p style={s.meta}>
                       {tab === "client" ? (
                         <>
-                          With {svc.provider_name || "provider"} · ${svc.price ?? "—"}
+                          With {svc.provider_name || "provider"} · {priceLabel}
                         </>
                       ) : (
                         <>
-                          From {clientName} · ${svc.price ?? "—"}
+                          From {clientName} · {priceLabel}
                         </>
                       )}
                     </p>
@@ -212,7 +218,7 @@ function BookingsPage({ onPay }) {
                       borderColor: st.border,
                     }}
                   >
-                    {st.label}
+                    {listingDeleted ? "Cancelled" : st.label}
                   </span>
                 </div>
 
@@ -232,7 +238,7 @@ function BookingsPage({ onPay }) {
                 )}
 
                 {/* Provider actions */}
-                {b.viewer_role === "provider" && b.status === "pending" && (
+                {!listingDeleted && b.viewer_role === "provider" && b.status === "pending" && (
                   <div style={s.actions}>
                     <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
                       Decline
@@ -243,7 +249,7 @@ function BookingsPage({ onPay }) {
                   </div>
                 )}
 
-                {b.viewer_role === "provider" && b.status === "paid" && (
+                {!listingDeleted && b.viewer_role === "provider" && b.status === "paid" && (
                   <div style={s.actions}>
                     <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "in_progress")}>
                       {busy ? "…" : "Mark as started"}
@@ -251,7 +257,7 @@ function BookingsPage({ onPay }) {
                   </div>
                 )}
 
-                {b.viewer_role === "provider" && b.status === "in_progress" && (
+                {!listingDeleted && b.viewer_role === "provider" && b.status === "in_progress" && (
                   <div style={s.actions}>
                     <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "delivered")}>
                       {busy ? "…" : "Mark as delivered"}
@@ -260,7 +266,7 @@ function BookingsPage({ onPay }) {
                 )}
 
                 {/* Client actions */}
-                {b.viewer_role === "requester" && (b.status === "pending" || b.status === "confirmed") && (
+                {!listingDeleted && b.viewer_role === "requester" && (b.status === "pending" || b.status === "confirmed") && (
                   <div style={s.actions}>
                     <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
                       Cancel
@@ -273,7 +279,7 @@ function BookingsPage({ onPay }) {
                   </div>
                 )}
 
-                {b.viewer_role === "requester" && (b.status === "paid" || b.status === "in_progress") && (
+                {!listingDeleted && b.viewer_role === "requester" && (b.status === "paid" || b.status === "in_progress") && (
                   <div style={s.actions}>
                     <button type="button" style={s.btnDecline} disabled={busy} onClick={() => handleRefund(b.id)}>
                       {busy ? "…" : "Cancel & refund"}
@@ -281,7 +287,7 @@ function BookingsPage({ onPay }) {
                   </div>
                 )}
 
-                {b.viewer_role === "requester" && b.status === "delivered" && (
+                {!listingDeleted && b.viewer_role === "requester" && b.status === "delivered" && (
                   <div style={s.actions}>
                     <p style={s.deliveredNote}>Work marked as done — release payment?</p>
                     <button type="button" style={s.btnPay} disabled={busy} onClick={() => handleRelease(b.id)}>

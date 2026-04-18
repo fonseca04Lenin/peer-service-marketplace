@@ -19,7 +19,13 @@ class Service(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other')
+    RATE_TYPE_CHOICES = [
+        ('hour', 'Per Hour'),
+        ('flat', 'Flat Rate'),
+    ]
+
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    rate_type = models.CharField(max_length=4, choices=RATE_TYPE_CHOICES, default='hour')
     image = models.ImageField(upload_to='service_images/', blank=True, null=True)
     service_area = models.CharField(max_length=100, blank=True)
     latitude = models.FloatField(null=True, blank=True)

@@ -196,7 +196,7 @@ function SearchPage({ onSelectService, servicesRefreshKey = 0, currentUser, onNa
                       </span>
                     </div>
                     <div style={{ fontWeight: "700", fontSize: "16px", color: colors.accentIndigo, whiteSpace: "nowrap" }}>
-                      ${service.price}<span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>
+                      ${service.price}{service.rate_type !== 'flat' && <span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>}
                     </div>
                   </div>
 

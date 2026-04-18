@@ -14,7 +14,7 @@ class ServiceMiniSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Service
-        fields = ['id', 'title', 'price', 'category', 'image', 'is_remote', 'provider_name']
+        fields = ['id', 'title', 'price', 'rate_type', 'category', 'image', 'is_remote', 'provider_name']
 
     def get_provider_name(self, obj):
         p = obj.provider
@@ -59,7 +59,7 @@ class BookingSerializer(serializers.ModelSerializer):
         u = request.user
         if obj.requester_id == u.id:
             return 'requester'
-        if obj.service.provider_id == u.id:
+        if obj.service and obj.service.provider_id == u.id:
             return 'provider'
         return None
 

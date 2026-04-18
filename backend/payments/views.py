@@ -173,6 +173,9 @@ def pay_booking(request):
     if hasattr(booking, 'escrow'):
         return Response({'error': 'This booking has already been paid.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    if not booking.service_id:
+        return Response({'error': 'This listing has been removed and cannot be paid for.'}, status=status.HTTP_400_BAD_REQUEST)
+
     total    = booking.service.price
     fee      = (total * PLATFORM_FEE_PERCENT / Decimal('100')).quantize(Decimal('0.01'))
     net      = total - fee
@@ -253,8 +256,17 @@ def release_escrow(request):
     except EscrowEntry.DoesNotExist:
         return Response({'error': 'No held escrow found for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    provider_id = (
+        booking.service.provider_id if booking.service_id
+        else booking.wallet_transactions.filter(type='escrow').values_list('user_id', flat=True).first()
+    )
+    if not provider_id:
+        return Response({'error': 'Could not identify provider for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    svc_title = booking.service.title if booking.service_id else 'deleted listing'
+
     with db_transaction.atomic():
-        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
+        provider = User.objects.select_for_update().get(pk=provider_id)
         provider.escrow_balance -= escrow.amount
         provider.wallet_balance += escrow.amount
         provider.save(update_fields=['escrow_balance', 'wallet_balance'])
@@ -265,7 +277,7 @@ def release_escrow(request):
             amount=escrow.amount,
             status='completed',
             booking=booking,
-            note=f'Payment released: {booking.service.title}',
+            note=f'Payment released: {svc_title}',
         )
 
         escrow.status = 'released'
@@ -297,6 +309,14 @@ def refund_booking(request):
         return Response({'error': 'No held escrow found for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
 
     refund_amount = escrow.amount + escrow.platform_fee
+    provider_id = (
+        booking.service.provider_id if booking.service_id
+        else booking.wallet_transactions.filter(type='escrow').values_list('user_id', flat=True).first()
+    )
+    if not provider_id:
+        return Response({'error': 'Could not identify provider for this booking.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    svc_title = booking.service.title if booking.service_id else 'deleted listing'
 
     with db_transaction.atomic():
         buyer = User.objects.select_for_update().get(pk=request.user.pk)
@@ -309,10 +329,10 @@ def refund_booking(request):
             amount=refund_amount,
             status='completed',
             booking=booking,
-            note=f'Refund: {booking.service.title}',
+            note=f'Refund: {svc_title}',
         )
 
-        provider = User.objects.select_for_update().get(pk=booking.service.provider.pk)
+        provider = User.objects.select_for_update().get(pk=provider_id)
         provider.escrow_balance -= escrow.amount
         provider.save(update_fields=['escrow_balance'])
 

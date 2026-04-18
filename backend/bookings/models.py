@@ -15,7 +15,7 @@ class Booking(models.Model):
         ('cancelled',   'Cancelled'),
     ]
 
-    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='bookings')
+    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings')
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
     scheduled_at = models.DateTimeField()
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
@@ -23,4 +23,5 @@ class Booking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.requester.username} → {self.service.title} on {self.scheduled_at}'
+        svc = self.service.title if self.service_id else '[deleted]'
+        return f'{self.requester.username} → {svc} on {self.scheduled_at}'

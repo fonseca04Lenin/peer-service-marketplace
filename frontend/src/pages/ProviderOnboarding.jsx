@@ -126,6 +126,7 @@ function ProviderOnboarding({ onFinish, onBack }) {
       svcData.append('description', serviceDesc.trim());
       svcData.append('category', serviceCategory);
       svcData.append('price', String(parseFloat(servicePrice)));
+      svcData.append('rate_type', rateType);
       svcData.append('is_remote', isRemote);
       svcData.append('service_area', isRemote ? '' : serviceArea.trim());
       if (!isRemote && serviceAreaLat != null) svcData.append('latitude', serviceAreaLat);

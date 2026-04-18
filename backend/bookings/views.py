@@ -90,7 +90,8 @@ def booking_detail(request, pk):
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     uid = request.user.id
-    if uid not in (booking.requester_id, booking.service.provider_id):
+    provider_id = booking.service.provider_id if booking.service_id else None
+    if uid not in (booking.requester_id, provider_id):
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
@@ -100,7 +101,7 @@ def booking_detail(request, pk):
     if not new_status or new_status not in dict(Booking.STATUS_CHOICES):
         return Response({'detail': 'Invalid or missing status.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    is_provider = uid == booking.service.provider_id
+    is_provider = provider_id is not None and uid == provider_id
     is_requester = uid == booking.requester_id
 
     error = _apply_status_transition(booking, new_status, is_provider, is_requester)

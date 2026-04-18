@@ -168,7 +168,7 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
         <div style={s.leftCol}>
           <div style={s.priceRow}>
             <h1 style={s.title}>{service.title}</h1>
-            <div style={s.price}>${service.price}<span style={{ fontSize: "13px", fontWeight: "500", color: "#aaa" }}>/hr</span></div>
+            <div style={s.price}>${service.price}{service.rate_type !== 'flat' && <span style={{ fontSize: "13px", fontWeight: "500", color: "#aaa" }}>/hr</span>}</div>
           </div>
 
           <div style={s.badges}>
@@ -259,7 +259,7 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
                 <form style={s.bookingCard} onSubmit={submitBooking}>
                   <div style={s.summaryRow}>
                     <span style={s.summaryLabel}>Listed rate</span>
-                    <span style={s.summaryPrice}>${service.price}<span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span></span>
+                    <span style={s.summaryPrice}>${service.price}{service.rate_type !== 'flat' && <span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>}</span>
                   </div>
                   <label style={s.fieldLabel} htmlFor="when">
                     Date & time
