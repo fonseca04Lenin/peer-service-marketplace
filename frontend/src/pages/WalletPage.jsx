@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { apiFetch } from "../api";
 import { colors } from "../constants";
 import { formatDate } from "../utils/format";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 const TYPE_META = {
   deposit:      { label: "Added funds",        sign: "+", color: "#16a34a" },
@@ -78,11 +82,170 @@ function FundForm({ title, endpoint, min, max, btnVariant, submitLabel, successM
   );
 }
 
+const QUICK_AMOUNTS = [25, 50, 100, 250];
+
+function StripeDepositInner({ onSuccess }) {
+  const stripe   = useStripe();
+  const elements = useElements();
+
+  const [amount,   setAmount]   = useState("");
+  const [step,     setStep]     = useState("amount");
+  const [secret,   setSecret]   = useState("");
+  const [intentId, setIntentId] = useState("");
+  const [busy,     setBusy]     = useState(false);
+  const [err,      setErr]      = useState("");
+
+  async function handleAmountSubmit(e) {
+    e.preventDefault();
+    setErr("");
+    const amt = parseFloat(amount);
+    if (!amount || isNaN(amt) || amt < 5) { setErr("Minimum deposit is $5.00."); return; }
+    if (amt > 5000)                        { setErr("Maximum deposit is $5,000.00."); return; }
+    setBusy(true);
+    try {
+      const res  = await apiFetch("/payments/deposit-intent/", { method: "POST", body: JSON.stringify({ amount: amt }) });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || "Could not start deposit."); return; }
+      setSecret(data.client_secret);
+      setIntentId(data.intent_id);
+      setStep("card");
+    } catch {
+      setErr("Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCardSubmit(e) {
+    e.preventDefault();
+    setErr("");
+    if (!stripe || !elements) return;
+    setBusy(true);
+    try {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(secret, {
+        payment_method: { card: elements.getElement(CardElement) },
+      });
+      if (error) { setErr(error.message); return; }
+      if (paymentIntent.status === "succeeded") {
+        const res  = await apiFetch("/payments/confirm-deposit/", { method: "POST", body: JSON.stringify({ intent_id: intentId }) });
+        const data = await res.json();
+        if (!res.ok) { setErr(data.error || "Deposit failed to confirm."); return; }
+        setStep("done");
+        onSuccess(data);
+      } else {
+        setErr("Payment did not complete. Please try again.");
+      }
+    } catch {
+      setErr("Something went wrong. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (step === "done") {
+    return (
+      <div style={s.panel}>
+        <p style={s.panelTitle}>Deposit</p>
+        <div style={s.successBlock}>
+          <p style={s.successIcon}>✓</p>
+          <p style={s.successMsg}>
+            ${parseFloat(amount).toFixed(2)} added to your wallet
+          </p>
+        </div>
+        <button style={s.btnFilled} onClick={() => { setStep("amount"); setAmount(""); setErr(""); }}>
+          Deposit again
+        </button>
+      </div>
+    );
+  }
+
+  if (step === "card") {
+    return (
+      <div style={s.panel}>
+        <div style={s.depositHeader}>
+          <p style={{ ...s.panelTitle, margin: 0 }}>Card details</p>
+          <span style={s.amountBadge}>${parseFloat(amount).toFixed(2)}</span>
+        </div>
+        <div style={s.testCardHint}>
+          <span style={s.testCardLabel}>Test card</span>
+          <span style={s.testCardNum}>4242 4242 4242 4242</span>
+          <span style={s.testCardSub}>Any future date · Any CVC</span>
+        </div>
+        <form onSubmit={handleCardSubmit}>
+          <div style={s.cardElementWrap}>
+            <CardElement options={{
+              style: {
+                base: {
+                  fontSize: "14px",
+                  fontFamily: "'Poppins', sans-serif",
+                  color: colors.dark,
+                  "::placeholder": { color: "#c4b5fd" },
+                },
+                invalid: { color: "#ef4444" },
+              },
+            }} />
+          </div>
+          {err && <p style={s.errMsg}>{err}</p>}
+          <button type="submit" style={s.btnFilled} disabled={busy || !stripe}>
+            {busy ? "Processing…" : `Deposit $${parseFloat(amount).toFixed(2)}`}
+          </button>
+          <button type="button" style={{ ...s.btnGhost, marginTop: "8px" }} onClick={() => { setStep("amount"); setErr(""); }} disabled={busy}>
+            Back
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div style={s.panel}>
+      <p style={s.panelTitle}>Deposit</p>
+      <div style={s.quickAmounts}>
+        {QUICK_AMOUNTS.map(q => (
+          <button
+            key={q}
+            type="button"
+            style={{ ...s.quickBtn, ...(parseFloat(amount) === q ? s.quickBtnActive : {}) }}
+            onClick={() => { setAmount(String(q)); setErr(""); }}
+          >
+            ${q}
+          </button>
+        ))}
+      </div>
+      <form onSubmit={handleAmountSubmit}>
+        <div style={s.amtField}>
+          <span style={s.currency}>$</span>
+          <input
+            type="number" min="5" max="5000" step="0.01" placeholder="0.00"
+            value={amount}
+            onChange={e => { setAmount(e.target.value); setErr(""); }}
+            style={s.amtInput}
+          />
+        </div>
+        {err && <p style={s.errMsg}>{err}</p>}
+        <button type="submit" style={s.btnFilled} disabled={busy || !amount}>
+          {busy ? "Loading…" : "Continue"}
+        </button>
+        <p style={s.hint}>Minimum $5 · Maximum $5,000 per deposit</p>
+      </form>
+    </div>
+  );
+}
+
+function StripeDepositForm({ onSuccess }) {
+  return (
+    <Elements stripe={stripePromise}>
+      <StripeDepositInner onSuccess={onSuccess} />
+    </Elements>
+  );
+}
+
 function WalletPage() {
   const [balance,     setBalance]     = useState(null);
   const [escrow,      setEscrow]      = useState(null);
   const [txns,        setTxns]        = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const depositRef = useRef(null);
 
   const load = useCallback(() => {
     setPageLoading(true);
@@ -121,6 +284,12 @@ function WalletPage() {
             <p style={s.balanceAmt}>
               ${balance !== null ? balance.toFixed(2) : "0.00"}
             </p>
+            <button
+              style={s.depositBtn}
+              onClick={() => depositRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            >
+              Deposit
+            </button>
           </div>
           {escrow > 0 && (
             <div style={s.escrowBlock}>
@@ -135,17 +304,9 @@ function WalletPage() {
       </div>
 
       <div style={s.actionRow}>
-        <FundForm
-          title="Add funds"
-          endpoint="/payments/deposit/"
-          min="5"
-          max="5000"
-          btnVariant="filled"
-          submitLabel="Add to wallet"
-          successMsg="Funds added successfully."
-          hint="Minimum $5 · Maximum $5,000 per deposit"
-          onSuccess={data => { setBalance(data.balance); load(); }}
-        />
+        <div ref={depositRef}>
+          <StripeDepositForm onSuccess={data => { setBalance(data.balance); load(); }} />
+        </div>
         <FundForm
           title="Withdraw earnings"
           endpoint="/payments/withdraw/"
@@ -158,7 +319,6 @@ function WalletPage() {
         />
       </div>
 
-      {/* transaction history Code */}
       <div style={s.historyCard}>
         <p style={s.panelTitle}>Transaction history</p>
 
@@ -271,6 +431,18 @@ const s = {
     color: "#aaa",
     margin: "6px 0 0",
   },
+  depositBtn: {
+    marginTop: "16px",
+    padding: "8px 20px",
+    background: colors.purple,
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+  },
   actionRow: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -291,6 +463,94 @@ const s = {
     margin: "0 0 16px",
   },
 
+  depositHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "12px",
+  },
+  amountBadge: {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: colors.purple,
+    background: "#f5f3ff",
+    border: "1px solid #ede9fe",
+    borderRadius: "4px",
+    padding: "2px 10px",
+  },
+  testCardHint: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "#f0fdf4",
+    border: "1px solid #bbf7d0",
+    borderRadius: "4px",
+    padding: "8px 12px",
+    marginBottom: "12px",
+    flexWrap: "wrap",
+  },
+  testCardLabel: {
+    fontSize: "10px",
+    fontWeight: "700",
+    color: "#16a34a",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+  },
+  testCardNum: {
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "#15803d",
+    fontFamily: "monospace",
+    letterSpacing: "0.05em",
+  },
+  testCardSub: {
+    fontSize: "11px",
+    color: "#16a34a",
+  },
+  quickAmounts: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "12px",
+  },
+  quickBtn: {
+    flex: 1,
+    padding: "7px 0",
+    background: "#f5f3ff",
+    color: colors.purple,
+    border: "1px solid #ede9fe",
+    borderRadius: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
+  },
+  quickBtnActive: {
+    background: colors.purple,
+    color: "white",
+    border: `1px solid ${colors.purple}`,
+  },
+  successBlock: {
+    textAlign: "center",
+    padding: "16px 0 20px",
+  },
+  successIcon: {
+    fontSize: "28px",
+    color: "#16a34a",
+    margin: "0 0 8px",
+  },
+  successMsg: {
+    fontSize: "15px",
+    fontWeight: "600",
+    color: "#15803d",
+    margin: 0,
+  },
+  cardElementWrap: {
+    border: "1px solid #c4b5fd",
+    borderRadius: "4px",
+    padding: "10px 12px",
+    marginBottom: "12px",
+    background: "white",
+  },
   amtField: {
     display: "flex",
     alignItems: "center",
