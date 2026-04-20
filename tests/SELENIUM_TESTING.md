@@ -1,63 +1,59 @@
-# Selenium Automated Testing
 
-## What is Selenium?
 
-So basically Selenium is a tool that controls your web browser automatically. Instead of you sitting there clicking around the website yourself to make sure everything works, Selenium does it for you. It opens Chrome, goes to the site, clicks buttons, fills out forms, and checks that the right things show up on the screen. It's like a robot that pretends to be a real user.
+Used Selenium with Python's builtin unittest framework to write automated browser tests for the app as stated by the assigment. Selenium basically controls a real Chrome window and clicks around the app the same way a user would so we can verify everything actually works end to end instead of just hoping it does.
+There are 10 tests total. They run in order and share one browser session so the whole suite finishes in about 35 seconds.
 
-We wrote 10 of these automated tests for our marketplace app. Each one tests a different part of the site.
 
----
+**Test 1 — Landing page loads**
+Opens the app and checks that the Sign in and Get started buttons are visible. Just a basic sanity check that the frontend is actually up and serving the page.
 
-## What the tests actually do
+**Test 2 — New user can register**
+Fills out the full signup form with a randomly generated username, picks a country, enters a city, and submits. Then checks that it lands on the main dashboard instead of showing an error.
 
-**Test 1 — Does the home page load?**
-This one just opens the website and makes sure the main page actually shows up with the Sign in and Get started buttons. If the site is completely broken this will catch it right away.
+**Test 3 —Existing user can log in**
+Uses the account created during setup to log in through the login page. Verifies the nav bar shows up after a successful login.
 
-**Test 2 — Can someone create a new account?**
-Goes through the whole signup process — fills in a first name, last name, username, email, password, country, and city, then clicks Create account. Checks that after signing up the user lands on the dashboard and not some error screen.
+**Test 4 — Navigation tabs work**
+Clicks through the Explore, Bookings, and Dashboard tabs and makes sure each one actually switches the page. Quick way to catch if any tab silently breaks.
 
-**Test 3 — Can someone log in?**
-Takes an account that was already created and logs in with the username and password. Makes sure the app actually lets you in and shows the main page.
+**Test 5 — Search works**
+Goes to the Explore page and types "tutoring" in the search bar. Waits for the debounce and then checks that either results came back or the empty state appeared — either way the search ran without crashing.
 
-**Test 4 — Do the navigation buttons work?**
-Once logged in, clicks on the Explore, Bookings, and Dashboard buttons at the top of the page one by one. Makes sure each button actually switches to the right page instead of doing nothing or breaking.
+**Test 6 — Messages page loads**
+Navigates to the Messages tab and confirms the inbox UI shows up. Checks that the page doesn't just go blank.
 
-**Test 5 — Does search work?**
-Goes to the Explore page and types "tutoring" in the search bar. Waits a moment and then checks that the page responded — either by showing matching services or showing a no results message. Either way the search has to do something.
+**Test 7 — Wallet page loads**
+Opens the user dropdown in the nav and clicks Wallet. Verifies the page shows a balance section.
 
-**Test 6 — Does the Messages page open?**
-Clicks on the Messages tab and makes sure the page loads and shows the inbox. Just checking it doesn't go blank or crash.
+**Test 8 — Depositing funds works**
+On the wallet page, types 25 in the deposit input and clicks Add funds. Waits for the response and then checks that either the success message or the updated balance ($25.00) appears on the page.
 
-**Test 7 — Does the Wallet page open?**
-Clicks the user menu in the top right corner, selects Wallet, and checks that the page shows up with a balance on it.
+**Test 9 — Bookings page loads**
+Navigates to the Bookings tab and confirms the page renders. Covers the case where someone might have zero bookings vs an actual list.
 
-**Test 8 — Can someone add money to their wallet?**
-On the wallet page, types 25 into the deposit box and clicks Add funds. Then checks that the page shows either a success message or the updated balance with $25. This confirms the deposit feature is actually working.
+**Test 10 — User can sign out**
+Opens the dropdown and clicks Sign out, then verifies the landing page comes back. Makes sure the logout doesn't just break the UI and leave the user stuck.
 
-**Test 9 — Does the Bookings page open?**
-Clicks the Bookings tab and makes sure the page loads, whether the user has bookings or not.
+#How to run the tests
 
-**Test 10 — Can someone log out?**
-Opens the menu in the top right and clicks Sign out. Then checks that the homepage comes back with the Sign in button. Making sure the logout doesn't just freeze the page.
+Make sure both servers are running first:
 
----
+First start the front and backend development servers.
 
-## How to run the tests
-
-Before running anything you need both parts of the app running at the same time — the backend which is the server that handles all the data, and the frontend which is the actual website. Open two separate terminal windows and run each one.
-
-Once both are running, install the testing tools if you haven't already:
+Then install the dependencies if you haven't already- which in this case we are adding selenium and web:
 
 ```bash
 pip install selenium webdriver-manager
 ```
 
-Then to run all 10 tests:
+Then just run:
 
 ```bash
 python tests/selenium_tests.py
 ```
 
-A Chrome window will pop open on its own and you can watch it go through every test by itself. It clicks around, fills in forms, and checks things automatically. The whole thing takes about 35 seconds. When it's done it will tell you how many tests passed and if any failed.
+The first time you run it, webdriver manager will download the right version of ChromeDriver for your Chrome automatically. You don't need to install anything else. A Chrome window will open and you'll be able to watch it go through each test on its own.
 
-You don't need to download or install anything extra for Chrome — the tool figures out what version you have and handles it on its own.
+If you want it to run in the background without opening a window, uncomment the headless line near the top of `selenium_tests.py`:
+
+Chrome must be installed for this to work.
