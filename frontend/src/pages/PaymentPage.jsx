@@ -18,7 +18,10 @@ function PaymentPage({ booking, onSuccess, onCancel, onAddFunds }) {
 
   if (!booking) return null;
 
-  const price   = parseFloat(booking.service?.price || 0);
+  // Use totalAmount if provided (for hourly bookings), otherwise use service price
+  const price   = booking.totalAmount ? parseFloat(booking.totalAmount) : parseFloat(booking.service?.price || 0);
+  const hours   = booking.hours ?? 1;
+  const isHourly = booking.hours !== undefined;
   const canPay  = !fetching && balance !== null && balance >= price;
   const shortBy = !fetching && balance !== null ? Math.max(0, price - balance) : 0;
 
@@ -26,9 +29,13 @@ function PaymentPage({ booking, onSuccess, onCancel, onAddFunds }) {
     setLoading(true);
     setError("");
     try {
+      const body = { booking_id: booking.id };
+      if (isHourly) body.hours = hours;
+      if (booking.totalAmount) body.amount = booking.totalAmount;
+      
       const res  = await apiFetch("/payments/pay-booking/", {
         method: "POST",
-        body: JSON.stringify({ booking_id: booking.id }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -45,7 +52,7 @@ function PaymentPage({ booking, onSuccess, onCancel, onAddFunds }) {
     }
   }
 
-  // success screen/Testing
+  // success screen
   if (paid) {
     return (
       <div style={s.page}>
@@ -76,6 +83,12 @@ function PaymentPage({ booking, onSuccess, onCancel, onAddFunds }) {
               {booking.service?.provider_name || booking.service?.provider?.username || "—"}
             </span>
           </div>
+          {isHourly && (
+            <div style={s.summaryRow}>
+              <span style={s.summaryLabel}>Hours</span>
+              <span style={s.summaryValue}>{hours} {hours === 1 ? 'hour' : 'hours'}</span>
+            </div>
+          )}
           <div style={s.summaryDivider}>
             <span style={{ ...s.summaryLabel, fontWeight: "600", color: colors.dark }}>Total due</span>
             <span style={s.summaryTotal}>${price.toFixed(2)}</span>
