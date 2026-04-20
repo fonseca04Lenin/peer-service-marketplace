@@ -40,6 +40,28 @@ export async function searchCities(query) {
     .slice(0, 5);
 }
 
+export async function searchAddresses(query) {
+  const params = new URLSearchParams({
+    q: query,
+    format: 'json',
+    addressdetails: '1',
+    limit: '6',
+    countrycodes: 'us',
+  });
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?${params}`,
+    { headers: HEADERS }
+  );
+  if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+  const data = await res.json();
+  return data.map(r => ({
+    label: r.display_name,
+    short: r.display_name.split(',').slice(0, 3).join(',').trim(),
+    lat: parseFloat(r.lat),
+    lng: parseFloat(r.lon),
+  })).slice(0, 5);
+}
+
 export async function reverseGeocode(lat, lng) {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
