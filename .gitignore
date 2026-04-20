@@ -17,6 +17,8 @@ dist/
 
 # Python virtual environment
 venv/
+backend/venv/
 
 # Database
 db.sqlite3
+backend/db.sqlite3

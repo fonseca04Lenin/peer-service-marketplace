@@ -26,6 +26,8 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
   const [msgSending, setMsgSending] = useState(false);
   const [msgError, setMsgError] = useState("");
   const [msgSent, setMsgSent] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   const token = getToken();
   const loggedIn = Boolean(token && currentUser);
@@ -37,6 +39,16 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
       .then(setService)
       .catch(() => setLoadError("We couldn't load this service. Try again later."));
   }, [id]);
+
+  useEffect(() => {
+    if (!service?.provider?.id) return;
+    setReviewsLoading(true);
+    apiFetch(`/reviews/?provider_id=${service.provider.id}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => setReviews(Array.isArray(data) ? data : []))
+      .catch(() => setReviews([]))
+      .finally(() => setReviewsLoading(false));
+  }, [service]);
 
   const minWhen = useMemo(() => {
     const d = new Date();
@@ -175,11 +187,18 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
         <div style={s.leftCol}>
           <div style={s.priceRow}>
             <h1 style={s.title}>{service.title}</h1>
-            <div style={s.price}>${service.price}{service.rate_type !== 'flat' && <span style={{ fontSize: "13px", fontWeight: "500", color: "#aaa" }}>/hr</span>}</div>
+            <div style={s.price}>
+              ${service.price}
+              {service.rate_type !== 'flat' && (
+                <span style={{ fontSize: "13px", fontWeight: "500", color: "#aaa" }}>/hr</span>
+              )}
+            </div>
           </div>
 
           <div style={s.badges}>
-            {service.category && <span style={s.catBadge}>{CATEGORY_LABELS[service.category] || service.category}</span>}
+            {service.category && (
+              <span style={s.catBadge}>{CATEGORY_LABELS[service.category] || service.category}</span>
+            )}
             {service.is_remote ? (
               <span style={s.remoteBadge}>Remote</span>
             ) : (
@@ -215,6 +234,30 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
                 ))}
               </div>
             </>
+          )}
+
+          <div style={s.divider} />
+
+          <h3 style={s.sectionLabel}>Reviews</h3>
+
+          {reviewsLoading ? (
+            <p style={s.muted}>Loading reviews...</p>
+          ) : reviews.length === 0 ? (
+            <p style={s.muted}>No reviews yet.</p>
+          ) : (
+            <div style={s.reviewList}>
+              {reviews.map((review) => (
+                <div key={review.id} style={s.reviewCard}>
+                  <p style={s.reviewMeta}>
+                    {review.reviewer_username} · {new Date(review.created_at).toLocaleDateString()}
+                  </p>
+                  <p style={s.reviewRating}>
+                    {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                  </p>
+                  {review.comment && <p style={s.reviewComment}>{review.comment}</p>}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -266,7 +309,12 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
                 <form style={s.bookingCard} onSubmit={submitBooking}>
                   <div style={s.summaryRow}>
                     <span style={s.summaryLabel}>Listed rate</span>
-                    <span style={s.summaryPrice}>${service.price}{service.rate_type !== 'flat' && <span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>}</span>
+                    <span style={s.summaryPrice}>
+                      ${service.price}
+                      {service.rate_type !== 'flat' && (
+                        <span style={{ fontSize: "12px", fontWeight: "500", color: "#aaa" }}>/hr</span>
+                      )}
+                    </span>
                   </div>
                   <label style={s.fieldLabel} htmlFor="when">
                     Date & time
@@ -364,9 +412,7 @@ const s = {
     gap: "40px",
     alignItems: "start",
   },
-  leftCol: {
-    minWidth: 0,
-  },
+  leftCol: { minWidth: 0 },
   rightCol: {
     background: "white",
     border: `1px solid ${colors.border}`,
@@ -428,21 +474,9 @@ const s = {
     color: colors.dark,
     margin: "0 0 3px",
   },
-  tagline: {
-    fontSize: "13px",
-    color: "#666",
-    margin: "0 0 3px",
-  },
-  location: {
-    fontSize: "12px",
-    color: "#aaa",
-    margin: 0,
-  },
-  divider: {
-    height: "1px",
-    background: colors.border,
-    margin: "20px 0",
-  },
+  tagline: { fontSize: "13px", color: "#666", margin: "0 0 3px" },
+  location: { fontSize: "12px", color: "#aaa", margin: 0 },
+  divider: { height: "1px", background: colors.border, margin: "20px 0" },
   priceRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -470,10 +504,7 @@ const s = {
     alignItems: "center",
     marginBottom: "16px",
   },
-  catBadge: {
-    fontSize: "11.5px",
-    color: "#aaa",
-  },
+  catBadge: { fontSize: "11.5px", color: "#aaa" },
   remoteBadge: {
     fontSize: "11px",
     fontWeight: "600",
@@ -492,17 +523,8 @@ const s = {
     borderRadius: 0,
     padding: "2px 8px",
   },
-  date: {
-    fontSize: "11px",
-    color: "#bbb",
-    marginLeft: "auto",
-  },
-  description: {
-    fontSize: "14px",
-    color: "#444",
-    lineHeight: 1.7,
-    margin: 0,
-  },
+  date: { fontSize: "11px", color: "#bbb", marginLeft: "auto" },
+  description: { fontSize: "14px", color: "#444", lineHeight: 1.7, margin: 0 },
   sectionLabel: {
     fontSize: "11px",
     fontWeight: "600",
@@ -511,24 +533,9 @@ const s = {
     color: "#aaa",
     margin: "0 0 10px",
   },
-  hint: {
-    fontSize: "13px",
-    color: "#888",
-    margin: "0 0 16px",
-    lineHeight: 1.5,
-  },
-  bio: {
-    fontSize: "14px",
-    color: "#444",
-    lineHeight: 1.7,
-    margin: "0 0 20px",
-  },
-  skillsWrap: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginBottom: "4px",
-  },
+  hint: { fontSize: "13px", color: "#888", margin: "0 0 16px", lineHeight: 1.5 },
+  bio: { fontSize: "14px", color: "#444", lineHeight: 1.7, margin: "0 0 20px" },
+  skillsWrap: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "4px" },
   skillChip: {
     fontSize: "12px",
     fontWeight: "500",
@@ -538,12 +545,7 @@ const s = {
     borderRadius: 0,
     padding: "4px 10px",
   },
-  actionRow: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    marginTop: "4px",
-  },
+  actionRow: { display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" },
   ctaBtn: {
     width: "100%",
     padding: "14px 28px",
@@ -583,15 +585,8 @@ const s = {
     paddingBottom: "12px",
     borderBottom: `1px solid ${colors.border}`,
   },
-  summaryLabel: {
-    fontSize: "13px",
-    color: "#666",
-  },
-  summaryPrice: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: colors.purple,
-  },
+  summaryLabel: { fontSize: "13px", color: "#666" },
+  summaryPrice: { fontSize: "18px", fontWeight: "700", color: colors.purple },
   fieldLabel: {
     display: "block",
     fontSize: "12px",
@@ -599,10 +594,7 @@ const s = {
     color: "#444",
     marginBottom: "6px",
   },
-  optional: {
-    fontWeight: "400",
-    color: "#aaa",
-  },
+  optional: { fontWeight: "400", color: "#aaa" },
   input: {
     width: "100%",
     padding: "12px 14px",
@@ -626,11 +618,7 @@ const s = {
     resize: "vertical",
     color: colors.dark,
   },
-  err: {
-    color: "#dc2626",
-    fontSize: "13px",
-    margin: "0 0 10px",
-  },
+  err: { color: "#dc2626", fontSize: "13px", margin: "0 0 10px" },
   rowBtns: {
     display: "flex",
     gap: "10px",
@@ -659,10 +647,22 @@ const s = {
     cursor: "pointer",
     fontFamily: "'Poppins', sans-serif",
   },
-  muted: {
-    fontSize: "14px",
-    color: "#888",
+  muted: { fontSize: "14px", color: "#888" },
+  reviewList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginBottom: "4px",
   },
+  reviewCard: {
+    background: "white",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
+    padding: "14px 16px",
+  },
+  reviewMeta: { fontSize: "12px", color: "#888", margin: "0 0 6px" },
+  reviewRating: { fontSize: "16px", color: "#f5a623", margin: "0 0 6px" },
+  reviewComment: { fontSize: "14px", color: "#444", lineHeight: 1.6, margin: 0 },
 };
 
 export default ServicePage;

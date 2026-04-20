@@ -1,6 +1,7 @@
 import math
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -85,6 +86,7 @@ def service_detail(request, pk):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def create_service(request):
     serializer = ServiceSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
@@ -109,3 +111,22 @@ def delete_service(request, pk):
 
     service.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def update_service(request, pk):
+    try:
+        service = Service.objects.get(pk=pk)
+    except Service.DoesNotExist:
+        return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if service.provider != request.user:
+        return Response({'detail': 'Not allowed.'}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = ServiceSerializer(service, data=request.data, partial=True, context={'request': request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

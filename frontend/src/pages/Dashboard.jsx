@@ -84,7 +84,7 @@ function Dashboard({ onSelectService, onNavigate, onStartOnboarding, currentUser
       .catch(() => { if (!cancelled) setMessages([]); })
       .finally(() => { if (!cancelled) setLoading(p => ({ ...p, messages: false })); });
 
-    apiFetch("/reviews/")
+    apiFetch("/reviews/?filter=about")
       .then(r => r.ok ? r.json() : [])
       .then(data => { if (!cancelled) setReviews(Array.isArray(data) ? data : []); })
       .catch(() => { if (!cancelled) setReviews([]); })

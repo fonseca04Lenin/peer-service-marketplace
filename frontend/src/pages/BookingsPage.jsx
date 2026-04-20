@@ -27,6 +27,11 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
   const [confirmMsgId, setConfirmMsgId] = useState(null);
   const [confirmMsgText, setConfirmMsgText] = useState("");
   const [confirmMsgSending, setConfirmMsgSending] = useState(false);
+  const [reviewingId, setReviewingId] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewedIds, setReviewedIds] = useState(new Set());
+  const [reviewError, setReviewError] = useState("");
 
   const load = useCallback(() => {
     if (!currentUser) {
@@ -111,6 +116,30 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
     }
   }
 
+  async function handleSubmitReview(bookingId) {
+    setReviewError("");
+    try {
+      const res = await apiFetch("/reviews/", {
+        method: "POST",
+        body: JSON.stringify({
+          booking_id: bookingId,
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || err.error || "Could not submit review");
+      }
+      setReviewedIds((prev) => new Set([...prev, bookingId]));
+      setReviewingId(null);
+      setReviewRating(5);
+      setReviewComment("");
+    } catch (e) {
+      setReviewError(e.message || "Something went wrong");
+    }
+  }
+
   if (!currentUser) {
     return (
       <div style={s.page}>
@@ -135,7 +164,7 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
         <div>
           <h1 style={s.title}>Bookings</h1>
           <p style={s.sub}>
-            See what you’ve booked and what’s been requested from you.
+            See what you've booked and what's been requested from you.
           </p>
         </div>
       </div>
@@ -177,7 +206,7 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
           <p style={s.emptyTitle}>No bookings here yet</p>
           <p style={s.muted}>
             {tab === "client"
-              ? "Browse Search Services and send a booking request — you’ll see status updates here."
+              ? "Browse Search Services and send a booking request — you'll see status updates here."
               : "When someone requests your listing, it will appear here for you to confirm or decline."}
           </p>
         </div>
@@ -196,6 +225,7 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
             const priceLabel = svc.price != null
               ? `$${svc.price}${svc.rate_type !== 'flat' ? '/hr' : ''}`
               : "—";
+            const alreadyReviewed = reviewedIds.has(b.id);
 
             return (
               <article key={b.id} style={s.card}>
@@ -204,24 +234,13 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
                     <h2 style={s.cardTitle}>{svc.title || "Service no longer available"}</h2>
                     <p style={s.meta}>
                       {tab === "client" ? (
-                        <>
-                          With {svc.provider_name || "provider"} · {priceLabel}
-                        </>
+                        <>With {svc.provider_name || "provider"} · {priceLabel}</>
                       ) : (
-                        <>
-                          From {clientName} · {priceLabel}
-                        </>
+                        <>From {clientName} · {priceLabel}</>
                       )}
                     </p>
                   </div>
-                  <span
-                    style={{
-                      ...s.badge,
-                      background: st.bg,
-                      color: st.color,
-                      borderColor: st.border,
-                    }}
-                  >
+                  <span style={{ ...s.badge, background: st.bg, color: st.color, borderColor: st.border }}>
                     {listingDeleted ? "Cancelled" : st.label}
                   </span>
                 </div>
@@ -264,7 +283,6 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
                   </div>
                 )}
 
-                {/* Inline message box shown after provider clicks Confirm */}
                 {confirmMsgId === b.id && (
                   <div style={s.msgBox}>
                     <p style={s.msgPrompt}>Send a message to {`${req.first_name || req.username || "the client"}`} to confirm:</p>
@@ -404,15 +422,52 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
                   </div>
                 )}
 
+                {/* Review section */}
                 {!listingDeleted && b.viewer_role === "requester" && b.status === "completed" && (
-                  <div style={s.actions}>
-                    <p style={s.completedNote}>Work completed — leave a review?</p>
-                    <button type="button" style={s.btnReview} onClick={() => { /* TODO: navigate to review form */ }}>
-                      Leave a review
-                    </button>
+                  <div style={{ marginTop: "12px" }}>
+                    {alreadyReviewed ? (
+                      <p style={{ fontSize: "13px", color: "#047857" }}>✓ Review submitted</p>
+                    ) : reviewingId === b.id ? (
+                      <div style={s.reviewForm}>
+                        <p style={s.reviewLabel}>Leave a review</p>
+                        <div style={s.starRow}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              style={{ ...s.star, color: star <= reviewRating ? "#f5a623" : "#ccc" }}
+                              onClick={() => setReviewRating(star)}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          style={s.reviewTextarea}
+                          placeholder="Write a comment (optional)"
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          rows={3}
+                        />
+                        {reviewError && <p style={s.cardErr}>{reviewError}</p>}
+                        <div style={s.actions}>
+                          <button type="button" style={s.btnDecline} onClick={() => setReviewingId(null)}>
+                            Cancel
+                          </button>
+                          <button type="button" style={s.btnConfirm} onClick={() => handleSubmitReview(b.id)}>
+                            Submit
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={s.actions}>
+                        <button type="button" style={s.btnConfirm} onClick={() => setReviewingId(b.id)}>
+                          Leave a review
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-                
               </article>
             );
           })}
@@ -430,285 +485,83 @@ const s = {
     minHeight: "100%",
     boxSizing: "border-box",
   },
-  head: {
-    marginBottom: "20px",
-    maxWidth: "720px",
-  },
-  title: {
-    fontSize: "22px",
-    fontWeight: "700",
-    margin: "0 0 8px",
-    color: colors.dark,
-  },
-  sub: {
-    fontSize: "13px",
-    color: "#888",
-    margin: 0,
-    lineHeight: 1.6,
-  },
-  err: {
-    color: "#dc2626",
-    fontSize: "14px",
-  },
-  tabs: {
-    display: "flex",
-    gap: "8px",
-    marginBottom: "16px",
-  },
+  head: { marginBottom: "20px", maxWidth: "720px" },
+  title: { fontSize: "22px", fontWeight: "700", margin: "0 0 8px", color: colors.dark },
+  sub: { fontSize: "13px", color: "#888", margin: 0, lineHeight: 1.6 },
+  err: { color: "#dc2626", fontSize: "14px" },
+  tabs: { display: "flex", gap: "8px", marginBottom: "16px" },
   tab: {
-    padding: "10px 18px",
-    borderRadius: "4px",
-    border: `1px solid ${colors.border}`,
-    background: "white",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#666",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+    padding: "10px 18px", borderRadius: "4px", border: `1px solid ${colors.border}`,
+    background: "white", fontSize: "13px", fontWeight: "600", color: "#666",
+    cursor: "pointer", fontFamily: "'Poppins', sans-serif",
   },
-  tabOn: {
-    border: `1px solid ${colors.purple}`,
-    color: colors.purple,
-    background: colors.purpleSoft,
-  },
-  filters: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginBottom: "22px",
-  },
+  tabOn: { border: `1px solid ${colors.purple}`, color: colors.purple, background: colors.purpleSoft },
+  filters: { display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "22px" },
   chip: {
-    padding: "6px 12px",
-    borderRadius: 0,
-    border: `1px solid ${colors.border}`,
-    background: "white",
-    fontSize: "11px",
-    fontWeight: "600",
-    color: "#888",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+    padding: "6px 12px", borderRadius: 0, border: `1px solid ${colors.border}`,
+    background: "white", fontSize: "11px", fontWeight: "600", color: "#888",
+    cursor: "pointer", fontFamily: "'Poppins', sans-serif",
   },
-  chipOn: {
-    border: `1px solid ${colors.purple}`,
-    color: colors.purple,
-    background: colors.purpleSoft,
-  },
-  grid: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    maxWidth: "720px",
-  },
-  card: {
-    background: "white",
-    borderRadius: "4px",
-    border: `1px solid ${colors.border}`,
-    padding: "20px 22px",
-  },
-  cardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  cardTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: colors.dark,
-    margin: "0 0 4px",
-  },
-  meta: {
-    fontSize: "12px",
-    color: "#888",
-    margin: 0,
-  },
-  badge: {
-    fontSize: "11px",
-    fontWeight: "700",
-    padding: "4px 10px",
-    borderRadius: 0,
-    border: "1px solid",
-    flexShrink: 0,
-  },
-  whenBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    padding: "12px 14px",
-    background: "#faf9ff",
-    borderRadius: "4px",
-    marginBottom: "10px",
-  },
-  whenLabel: {
-    fontSize: "10px",
-    fontWeight: "600",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#aaa",
-  },
-  whenVal: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: colors.dark,
-  },
-  notes: {
-    fontSize: "13px",
-    color: "#555",
-    margin: "0 0 12px",
-    lineHeight: 1.5,
-  },
-  actions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "4px",
-  },
+  chipOn: { border: `1px solid ${colors.purple}`, color: colors.purple, background: colors.purpleSoft },
+  grid: { display: "flex", flexDirection: "column", gap: "14px", maxWidth: "720px" },
+  card: { background: "white", borderRadius: "4px", border: `1px solid ${colors.border}`, padding: "20px 22px" },
+  cardTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "12px" },
+  cardTitle: { fontSize: "16px", fontWeight: "700", color: colors.dark, margin: "0 0 4px" },
+  meta: { fontSize: "12px", color: "#888", margin: 0 },
+  badge: { fontSize: "11px", fontWeight: "700", padding: "4px 10px", borderRadius: 0, border: "1px solid", flexShrink: 0 },
+  whenBlock: { display: "flex", flexDirection: "column", gap: "2px", padding: "12px 14px", background: "#faf9ff", borderRadius: "4px", marginBottom: "10px" },
+  whenLabel: { fontSize: "10px", fontWeight: "600", letterSpacing: "0.06em", textTransform: "uppercase", color: "#aaa" },
+  whenVal: { fontSize: "15px", fontWeight: "600", color: colors.dark },
+  notes: { fontSize: "13px", color: "#555", margin: "0 0 12px", lineHeight: 1.5 },
+  actions: { display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "4px" },
   btnConfirm: {
-    padding: "8px 16px",
-    borderRadius: "4px",
-    border: "none",
-    background: colors.purple,
-    color: "white",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+    padding: "8px 16px", borderRadius: "4px", border: "none", background: colors.purple,
+    color: "white", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "'Poppins', sans-serif",
   },
   btnDecline: {
-    padding: "8px 16px",
-    borderRadius: "4px",
-    border: `1px solid ${colors.purple}`,
-    background: "white",
-    color: colors.purple,
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+    padding: "8px 16px", borderRadius: "4px", border: `1px solid ${colors.purple}`,
+    background: "white", color: colors.purple, fontSize: "12px", fontWeight: "600",
+    cursor: "pointer", fontFamily: "'Poppins', sans-serif",
   },
   btnPay: {
-    padding: "8px 20px",
-    borderRadius: "4px",
-    border: "none",
-    background: colors.purple,
-    color: "white",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+    padding: "8px 20px", borderRadius: "4px", border: "none", background: colors.purple,
+    color: "white", fontSize: "12px", fontWeight: "600", cursor: "pointer", fontFamily: "'Poppins', sans-serif",
   },
-  cardErr: {
-    fontSize: "12px",
-    color: "#dc2626",
-    margin: "4px 0 8px",
-    textAlign: "right",
-  },
+  btnPayDisabled: { opacity: 0.45, cursor: "not-allowed" },
+  cardErr: { fontSize: "12px", color: "#dc2626", margin: "4px 0 8px", textAlign: "right" },
   msgBox: {
-    marginTop: "14px",
-    padding: "14px",
-    background: "#faf9ff",
-    borderRadius: "4px",
-    border: `1px solid #ddd6fe`,
+    marginTop: "14px", padding: "14px", background: "#faf9ff",
+    borderRadius: "4px", border: "1px solid #ddd6fe",
   },
-  msgPrompt: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: colors.dark,
-    margin: "0 0 8px",
-  },
+  msgPrompt: { fontSize: "12px", fontWeight: "600", color: colors.dark, margin: "0 0 8px" },
   msgTextarea: {
-    width: "100%",
-    padding: "8px 10px",
-    fontSize: "13px",
-    fontFamily: "'Poppins', sans-serif",
-    border: `1px solid ${colors.border}`,
-    borderRadius: "4px",
-    resize: "vertical",
-    boxSizing: "border-box",
-    outline: "none",
+    width: "100%", padding: "8px 10px", fontSize: "13px", fontFamily: "'Poppins', sans-serif",
+    border: `1px solid ${colors.border}`, borderRadius: "4px", resize: "vertical",
+    boxSizing: "border-box", outline: "none",
   },
-  deliveredNote: {
-    fontSize: "12px",
-    color: "#888",
-    margin: 0,
-    flex: 1,
-    alignSelf: "center",
-  },
-  payGroup: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: "6px",
-  },
-  hoursRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  },
-  hoursLabel: {
-    fontSize: "12px",
-    color: "#888",
-    fontFamily: "'Poppins', sans-serif",
-  },
+  deliveredNote: { fontSize: "12px", color: "#888", margin: 0, flex: 1, alignSelf: "center" },
+  payGroup: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" },
+  hoursRow: { display: "flex", alignItems: "center", gap: "8px" },
+  hoursLabel: { fontSize: "12px", color: "#888", fontFamily: "'Poppins', sans-serif" },
   hoursInput: {
-    width: "58px",
-    padding: "5px 8px",
-    fontSize: "13px",
-    fontFamily: "'Poppins', sans-serif",
-    border: "1px solid #c4b5fd",
-    borderRadius: "4px",
-    textAlign: "center",
-    outline: "none",
+    width: "58px", padding: "5px 8px", fontSize: "13px", fontFamily: "'Poppins', sans-serif",
+    border: "1px solid #c4b5fd", borderRadius: "4px", textAlign: "center", outline: "none",
   },
   affordWarn: {
-    fontSize: "11px",
-    color: "#b45309",
-    background: "#fffbeb",
-    border: "1px solid #fde68a",
-    borderRadius: "4px",
-    padding: "4px 10px",
-    margin: 0,
+    fontSize: "11px", color: "#b45309", background: "#fffbeb",
+    border: "1px solid #fde68a", borderRadius: "4px", padding: "4px 10px", margin: 0,
   },
-  btnPayDisabled: {
-    opacity: 0.45,
-    cursor: "not-allowed",
-  },
-  empty: {
-    padding: "28px",
-    background: "white",
-    borderRadius: "4px",
-    border: "1px dashed #ddd6fe",
-    maxWidth: "520px",
-  },
-  emptyTitle: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: colors.dark,
-    margin: "0 0 8px",
-  },
-  muted: {
-    fontSize: "14px",
-    color: "#888",
-    margin: 0,
-    lineHeight: 1.6,
-  },
-   completedNote: {
-    fontSize: "12px",
-    color: "#888",
-    margin: 0,
-    flex: 1,
-    alignSelf: "center",
-  },
-  btnReview: {
-    padding: "8px 20px",
-    borderRadius: "4px",
-    border: "none",
-    background: colors.violet,
-    color: "white",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontFamily: "'Poppins', sans-serif",
+  empty: { padding: "28px", background: "white", borderRadius: "4px", border: "1px dashed #ddd6fe", maxWidth: "520px" },
+  emptyTitle: { fontSize: "15px", fontWeight: "600", color: colors.dark, margin: "0 0 8px" },
+  muted: { fontSize: "14px", color: "#888", margin: 0, lineHeight: 1.6 },
+  reviewForm: { border: `1px solid ${colors.border}`, borderRadius: "4px", padding: "14px", marginTop: "8px" },
+  reviewLabel: { fontSize: "13px", fontWeight: "600", color: colors.dark, margin: "0 0 8px" },
+  starRow: { display: "flex", gap: "4px", marginBottom: "10px" },
+  star: { background: "none", border: "none", fontSize: "24px", cursor: "pointer", padding: 0 },
+  reviewTextarea: {
+    width: "100%", borderRadius: "4px", border: `1px solid ${colors.border}`,
+    padding: "8px", fontSize: "13px", fontFamily: "'Poppins', sans-serif",
+    resize: "vertical", boxSizing: "border-box", marginBottom: "8px",
   },
 };
 
