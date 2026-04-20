@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path('create-intent/',   views.create_payment_intent, name='create-payment-intent'),
+    path('deposit-intent/',  views.create_deposit_intent, name='deposit-intent'),
+    path('confirm-deposit/', views.confirm_deposit,       name='confirm-deposit'),
     path('webhook/',         views.stripe_webhook,        name='stripe-webhook'),
     path('deposit/',         views.deposit_funds,         name='wallet-deposit'),
     path('transactions/',    views.wallet_transactions,   name='wallet-transactions'),

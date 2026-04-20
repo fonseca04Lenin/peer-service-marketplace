@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { apiFetch } from "../api";
 import { colors } from "../constants";
 import { formatDate } from "../utils/format";
@@ -78,11 +78,13 @@ function FundForm({ title, endpoint, min, max, btnVariant, submitLabel, successM
   );
 }
 
+
 function WalletPage() {
   const [balance,     setBalance]     = useState(null);
   const [escrow,      setEscrow]      = useState(null);
   const [txns,        setTxns]        = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const depositRef = useRef(null);
 
   const load = useCallback(() => {
     setPageLoading(true);
@@ -121,6 +123,12 @@ function WalletPage() {
             <p style={s.balanceAmt}>
               ${balance !== null ? balance.toFixed(2) : "0.00"}
             </p>
+            <button
+              style={s.depositBtn}
+              onClick={() => depositRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            >
+              Deposit
+            </button>
           </div>
           {escrow > 0 && (
             <div style={s.escrowBlock}>
@@ -135,17 +143,19 @@ function WalletPage() {
       </div>
 
       <div style={s.actionRow}>
-        <FundForm
-          title="Add funds"
-          endpoint="/payments/deposit/"
-          min="5"
-          max="5000"
-          btnVariant="filled"
-          submitLabel="Add to wallet"
-          successMsg="Funds added successfully."
-          hint="Minimum $5 · Maximum $5,000 per deposit"
-          onSuccess={data => { setBalance(data.balance); load(); }}
-        />
+        <div ref={depositRef}>
+          <FundForm
+            title="Deposit funds"
+            endpoint="/payments/deposit/"
+            min="5"
+            max="5000"
+            btnVariant="filled"
+            submitLabel="Add funds"
+            successMsg="Funds added to your wallet."
+            hint="Minimum $5 · Maximum $5,000 per deposit"
+            onSuccess={data => { setBalance(data.balance); load(); }}
+          />
+        </div>
         <FundForm
           title="Withdraw earnings"
           endpoint="/payments/withdraw/"
@@ -158,7 +168,6 @@ function WalletPage() {
         />
       </div>
 
-      {/* transaction history Code */}
       <div style={s.historyCard}>
         <p style={s.panelTitle}>Transaction history</p>
 
@@ -270,6 +279,18 @@ const s = {
     fontSize: "11px",
     color: "#aaa",
     margin: "6px 0 0",
+  },
+  depositBtn: {
+    marginTop: "16px",
+    padding: "8px 20px",
+    background: colors.purple,
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
   },
   actionRow: {
     display: "grid",

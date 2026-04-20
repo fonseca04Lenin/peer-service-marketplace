@@ -22,8 +22,6 @@ PLATFORM_FEE_PERCENT = Decimal(str(getattr(settings, 'PLATFORM_FEE_PERCENT', 10)
 ESCROW_RELEASE_DAYS  = int(getattr(settings, 'ESCROW_RELEASE_DAYS', 7))
 
 
-#  Stripe based booking payment (kept for reference) do not delete yet
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_payment_intent(request):
@@ -55,6 +53,81 @@ def create_payment_intent(request):
     return Response({'client_secret': intent.client_secret, 'payment_id': payment.id})
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_deposit_intent(request):
+    try:
+        amount = Decimal(str(request.data.get('amount', 0)))
+    except Exception:
+        return Response({'error': 'Invalid amount.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if amount < Decimal('5.00'):
+        return Response({'error': 'Minimum deposit is $5.00.'}, status=status.HTTP_400_BAD_REQUEST)
+    if amount > Decimal('5000.00'):
+        return Response({'error': 'Maximum deposit is $5,000.00 per transaction.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(amount * 100),
+            currency='usd',
+            payment_method_types=['card'],
+            metadata={
+                'type':    'deposit',
+                'user_id': str(request.user.id),
+                'amount':  str(amount),
+            },
+        )
+    except stripe.error.StripeError as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({'client_secret': intent.client_secret, 'intent_id': intent.id})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def confirm_deposit(request):
+    intent_id = request.data.get('intent_id')
+    if not intent_id:
+        return Response({'error': 'Missing intent_id.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        intent = stripe.PaymentIntent.retrieve(intent_id)
+    except stripe.error.StripeError as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    if str(intent.metadata.get('user_id')) != str(request.user.id):
+        return Response({'error': 'Intent does not belong to this user.'}, status=status.HTTP_403_FORBIDDEN)
+
+    if intent.status != 'succeeded':
+        return Response({'error': 'Payment has not succeeded yet.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if WalletTransaction.objects.filter(note__contains=intent_id).exists():
+        user = User.objects.get(pk=request.user.pk)
+        return Response({'balance': float(user.wallet_balance)})
+
+    try:
+        amount = Decimal(intent.metadata.get('amount', ''))
+        if amount <= 0:
+            raise ValueError
+    except Exception:
+        return Response({'error': 'Invalid deposit amount in intent metadata.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with db_transaction.atomic():
+        user = User.objects.select_for_update().get(pk=request.user.pk)
+        user.wallet_balance += amount
+        user.save(update_fields=['wallet_balance'])
+
+        WalletTransaction.objects.create(
+            user=user,
+            type='deposit',
+            amount=amount,
+            status='completed',
+            note=f'Stripe deposit #{intent_id}',
+        )
+
+    return Response({'balance': float(user.wallet_balance)})
+
+
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([])
@@ -72,14 +145,35 @@ def stripe_webhook(request):
     intent = event['data']['object']
 
     if event['type'] == 'payment_intent.succeeded':
-        try:
-            payment = Payment.objects.get(stripe_payment_intent_id=intent['id'])
-            payment.status = 'completed'
-            payment.save()
-            payment.booking.status = 'confirmed'
-            payment.booking.save()
-        except Payment.DoesNotExist:
-            pass
+        tx_type = intent.get('metadata', {}).get('type')
+
+        if tx_type == 'deposit':
+            if not WalletTransaction.objects.filter(note__contains=intent['id']).exists():
+                user_id = intent['metadata'].get('user_id')
+                amount  = Decimal(intent['metadata'].get('amount', '0'))
+                try:
+                    with db_transaction.atomic():
+                        user = User.objects.select_for_update().get(pk=user_id)
+                        user.wallet_balance += amount
+                        user.save(update_fields=['wallet_balance'])
+                        WalletTransaction.objects.create(
+                            user=user,
+                            type='deposit',
+                            amount=amount,
+                            status='completed',
+                            note=f'Stripe deposit #{intent["id"]}',
+                        )
+                except User.DoesNotExist:
+                    pass
+        else:
+            try:
+                payment = Payment.objects.get(stripe_payment_intent_id=intent['id'])
+                payment.status = 'completed'
+                payment.save()
+                payment.booking.status = 'confirmed'
+                payment.booking.save()
+            except Payment.DoesNotExist:
+                pass
 
     elif event['type'] == 'payment_intent.payment_failed':
         try:
@@ -92,16 +186,9 @@ def stripe_webhook(request):
     return Response({'status': 'ok'})
 
 
-# Wallet endpoints
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def deposit_funds(request):
-    """
-    Add funds to the authenticated user's wallet balance.
-    Uses select_for_update inside an atomic block so concurrent requests
-    can't double-credit the same account.
-    """
     try:
         amount = Decimal(str(request.data.get('amount', 0)))
     except Exception:
@@ -130,7 +217,6 @@ def deposit_funds(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def wallet_transactions(request):
-    """Return the authenticated user's last 50 wallet transactions, newest first."""
     txns = (
         WalletTransaction.objects
         .filter(user=request.user)
@@ -348,11 +434,6 @@ def refund_booking(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def request_withdrawal(request):
-    """
-    Provider requests a withdrawal of their available wallet earnings.
-    Only wallet_balance (released funds) can be withdrawn — not escrow_balance.
-    Balance is held (deducted) immediately; admin processes the payout.
-    """
     try:
         amount = Decimal(str(request.data.get('amount', 0)))
     except Exception:
