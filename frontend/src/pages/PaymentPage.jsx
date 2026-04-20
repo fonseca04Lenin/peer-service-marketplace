@@ -45,15 +45,17 @@ function PaymentPage({ booking, onSuccess, onCancel, onAddFunds }) {
     }
   }
 
-  // success screen/Testing
   if (paid) {
     return (
       <div style={s.page}>
         <div style={s.card}>
           <div style={s.successIcon}>✓</div>
-          <h2 style={s.title}>Booking confirmed</h2>
-          <p style={s.sub}>Payment was deducted from your wallet. The provider has been notified.</p>
-          <button onClick={onSuccess} style={s.btnFilled}>View bookings</button>
+          <h2 style={{ ...s.title, textAlign: "center" }}>Payment successful</h2>
+          <p style={s.sub}>
+            ${price.toFixed(2)} has been deducted from your wallet and held in escrow.
+            The provider has been notified and will start your booking soon.
+          </p>
+          <button onClick={onSuccess} style={{ ...s.btnFilled, flex: "unset", display: "block", margin: "0 auto", padding: "12px 32px" }}>View bookings</button>
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import SearchPage from './SearchPage';
 import ServicePage from './ServicePage';
 import AccountPage from './AccountPage';
@@ -10,6 +10,7 @@ import SettingsPage from './SettingsPage';
 import PaymentPage from './PaymentPage';
 import WalletPage from './WalletPage';
 import { colors } from '../constants';
+import { apiFetch } from '../api';
 
 const navItems = [
   { label: 'Dashboard', key: 'Dashboard' },
@@ -24,7 +25,38 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
   const [selectedServiceID, setSelectedServiceID] = useState(null);
   const [payingBooking, setPayingBooking]         = useState(null);
   const [menuOpen, setMenuOpen]                   = useState(false);
+  const [openConvoUserId, setOpenConvoUserId]     = useState(null);
+  const [dots, setDots]                           = useState({});
   const menuRef                                   = useRef(null);
+
+  const checkNotifications = useCallback(() => {
+    if (!currentUser) return;
+    apiFetch('/messaging/')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const hasUnread = Array.isArray(data) && data.some(c => c.unread_count > 0);
+        setDots(prev => ({ ...prev, Messages: hasUnread }));
+      })
+      .catch(() => {});
+
+    apiFetch('/bookings/')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        const hasNew = data.some(b =>
+          (b.viewer_role === 'provider' && b.status === 'pending') ||
+          (b.viewer_role === 'requester' && (b.status === 'confirmed' || b.status === 'delivered'))
+        );
+        setDots(prev => ({ ...prev, Bookings: hasNew }));
+      })
+      .catch(() => {});
+  }, [currentUser]);
+
+  useEffect(() => {
+    checkNotifications();
+    const id = setInterval(checkNotifications, 30000);
+    return () => clearInterval(id);
+  }, [checkNotifications]);
 
   useEffect(() => {
     function handleClick(e) {
@@ -51,6 +83,7 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
     setSelectedServiceID(null);
     setPayingBooking(null);
     setActive(key);
+    setDots(prev => ({ ...prev, [key]: false }));
   }
 
   return (
@@ -74,7 +107,12 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
               }}
               onClick={() => navigate(key)}
             >
-              {label}
+              <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                {label}
+                {dots[key] && active !== key && (
+                  <span style={s.notifDot} />
+                )}
+              </span>
               {active === key && !selectedServiceID && <span style={s.activeDot} />}
             </button>
           ))}
@@ -156,8 +194,21 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
                 onNavigate={setActive}
               />
             )}
-            {active === 'Bookings'  && <BookingsPage onPay={setPayingBooking} />}
-            {active === 'Messages'  && <MessagesPage />}
+            {active === 'Bookings'  && (
+              <BookingsPage
+                onPay={setPayingBooking}
+                onNavigate={(page, userId) => {
+                  if (userId) setOpenConvoUserId(userId);
+                  setActive(page);
+                }}
+              />
+            )}
+            {active === 'Messages'  && (
+              <MessagesPage
+                openUserId={openConvoUserId}
+                onConvoOpened={() => setOpenConvoUserId(null)}
+              />
+            )}
             {active === 'Reviews'   && <ReviewsPage  currentUser={currentUser} />}
             {active === 'Settings'  && <SettingsPage currentUser={currentUser} onLogout={onLogout} />}
             {active === 'Wallet'    && <WalletPage />}
@@ -229,6 +280,17 @@ const s = {
   linkActive: {
     color: 'white',
     fontWeight: '500',
+  },
+
+  notifDot: {
+    position: 'absolute',
+    top: '-4px',
+    right: '-8px',
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    background: '#ef4444',
+    border: `1.5px solid ${colors.dark}`,
   },
 
   activeDot: {
