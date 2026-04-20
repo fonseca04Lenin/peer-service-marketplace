@@ -31,6 +31,13 @@ function ReviewsPage({ currentUser }) {
         <div style={s.page}>
             <h1 style={s.title}>My Reviews</h1>
 
+            <div style={s.howTo}>
+                <span style={s.howToIcon}>💡</span>
+                <p style={s.howToText}>
+                    To leave a review, go to <strong>Bookings</strong> and find a completed job — a "Leave a review" button will appear there.
+                </p>
+            </div>
+
             <div style={s.tabs}>
                 <button
                     style={activeTab === "written" ? s.tabActive : s.tab}
@@ -145,6 +152,27 @@ const s = {
     cardDate: {
         fontSize: "12px",
         color: "#aaa",
+    },
+    howTo: {
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "10px",
+        background: "#fffbeb",
+        border: "1px solid #fde68a",
+        borderRadius: "6px",
+        padding: "12px 16px",
+        marginBottom: "20px",
+    },
+    howToIcon: {
+        fontSize: "16px",
+        flexShrink: 0,
+        lineHeight: 1.4,
+    },
+    howToText: {
+        fontSize: "13px",
+        color: "#92400e",
+        margin: 0,
+        lineHeight: 1.6,
     },
 };
 

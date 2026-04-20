@@ -20,11 +20,13 @@ const navItems = [
   { label: 'Reviews',   key: 'Reviews' },
 ];
 
-function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey = 0 }) {
+function MainPage({ currentUser, onLogout, onStartOnboarding }) {
   const [active, setActive]                       = useState('Dashboard');
   const [selectedServiceID, setSelectedServiceID] = useState(null);
   const [payingBooking, setPayingBooking]         = useState(null);
   const [menuOpen, setMenuOpen]                   = useState(false);
+  const [walletBalance, setWalletBalance]         = useState(null);
+  const [servicesRefreshKey, setServicesRefreshKey] = useState(0);
   const [openConvoUserId, setOpenConvoUserId]     = useState(null);
   const [dots, setDots]                           = useState({});
   const menuRef                                   = useRef(null);
@@ -67,6 +69,30 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    apiFetch('/users/me/')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setWalletBalance(parseFloat(data.wallet_balance ?? 0)); });
+  }, [currentUser]);
+
+  async function payBooking(booking) {
+    const body = { booking_id: booking.id };
+    if (booking.hours) body.hours = booking.hours;
+    if (booking.totalAmount) body.amount = booking.totalAmount;
+    const res = await apiFetch('/payments/pay/', { method: 'POST', body: JSON.stringify(body) });
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (data?.balance != null) setWalletBalance(parseFloat(data.balance));
+      else {
+        apiFetch('/users/me/').then(r => r.ok ? r.json() : null)
+          .then(d => { if (d) setWalletBalance(parseFloat(d.wallet_balance ?? 0)); });
+      }
+      setPayingBooking(null);
+      setActive('Bookings');
+    }
+  }
 
   const displayName = currentUser
     ? (currentUser.first_name || currentUser.username)
@@ -197,6 +223,7 @@ function MainPage({ currentUser, onLogout, onStartOnboarding, servicesRefreshKey
             {active === 'Bookings'  && (
               <BookingsPage
                 onPay={setPayingBooking}
+                walletBalance={walletBalance}
                 onNavigate={(page, userId) => {
                   if (userId) setOpenConvoUserId(userId);
                   setActive(page);

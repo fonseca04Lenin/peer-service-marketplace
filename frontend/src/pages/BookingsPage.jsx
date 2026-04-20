@@ -14,7 +14,7 @@ const STATUS_STYLE = {
   cancelled:   { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
 };
 
-function BookingsPage({ onPay, onNavigate }) {
+function BookingsPage({ onPay, walletBalance, onNavigate }) {
   const currentUser = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +23,7 @@ function BookingsPage({ onPay, onNavigate }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionId, setActionId] = useState(null);
   const [actionError, setActionError] = useState({});
+  const [hoursMap, setHoursMap] = useState({});
   const [confirmMsgId, setConfirmMsgId] = useState(null);
   const [confirmMsgText, setConfirmMsgText] = useState("");
   const [confirmMsgSending, setConfirmMsgSending] = useState(false);
@@ -346,11 +347,43 @@ function BookingsPage({ onPay, onNavigate }) {
                     <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
                       Cancel
                     </button>
-                    {onPay && b.status === "confirmed" && (
-                      <button type="button" style={s.btnPay} disabled={busy} onClick={() => onPay(b)}>
-                        Pay now
-                      </button>
-                    )}
+                    {onPay && b.status === "confirmed" && (() => {
+                      const isHourly = svc.rate_type !== "flat";
+                      const hours = hoursMap[b.id] ?? 1;
+                      const total = isHourly ? svc.price * hours : svc.price;
+                      const balance = walletBalance ?? 0;
+                      const canAfford = balance >= total;
+                      return (
+                        <div style={s.payGroup}>
+                          {isHourly && (
+                            <div style={s.hoursRow}>
+                              <label style={s.hoursLabel}>Hours</label>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={hours}
+                                onChange={e => setHoursMap(prev => ({ ...prev, [b.id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                                style={s.hoursInput}
+                              />
+                            </div>
+                          )}
+                          {!canAfford && (
+                            <p style={s.affordWarn}>
+                              ⚠ Insufficient balance (${balance.toFixed(2)}) for ${total.toFixed(2)} total
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            style={{ ...s.btnPay, ...((!canAfford) ? s.btnPayDisabled : {}) }}
+                            disabled={busy || !canAfford}
+                            onClick={() => onPay({ ...b, hours: isHourly ? hours : undefined, totalAmount: total })}
+                          >
+                            Pay ${total.toFixed(2)}
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -370,6 +403,16 @@ function BookingsPage({ onPay, onNavigate }) {
                     </button>
                   </div>
                 )}
+
+                {!listingDeleted && b.viewer_role === "requester" && b.status === "completed" && (
+                  <div style={s.actions}>
+                    <p style={s.completedNote}>Work completed — leave a review?</p>
+                    <button type="button" style={s.btnReview} onClick={() => { /* TODO: navigate to review form */ }}>
+                      Leave a review
+                    </button>
+                  </div>
+                )}
+                
               </article>
             );
           })}
@@ -591,6 +634,45 @@ const s = {
     flex: 1,
     alignSelf: "center",
   },
+  payGroup: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: "6px",
+  },
+  hoursRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  hoursLabel: {
+    fontSize: "12px",
+    color: "#888",
+    fontFamily: "'Poppins', sans-serif",
+  },
+  hoursInput: {
+    width: "58px",
+    padding: "5px 8px",
+    fontSize: "13px",
+    fontFamily: "'Poppins', sans-serif",
+    border: "1px solid #c4b5fd",
+    borderRadius: "4px",
+    textAlign: "center",
+    outline: "none",
+  },
+  affordWarn: {
+    fontSize: "11px",
+    color: "#b45309",
+    background: "#fffbeb",
+    border: "1px solid #fde68a",
+    borderRadius: "4px",
+    padding: "4px 10px",
+    margin: 0,
+  },
+  btnPayDisabled: {
+    opacity: 0.45,
+    cursor: "not-allowed",
+  },
   empty: {
     padding: "28px",
     background: "white",
@@ -609,6 +691,24 @@ const s = {
     color: "#888",
     margin: 0,
     lineHeight: 1.6,
+  },
+   completedNote: {
+    fontSize: "12px",
+    color: "#888",
+    margin: 0,
+    flex: 1,
+    alignSelf: "center",
+  },
+  btnReview: {
+    padding: "8px 20px",
+    borderRadius: "4px",
+    border: "none",
+    background: colors.violet,
+    color: "white",
+    fontSize: "12px",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontFamily: "'Poppins', sans-serif",
   },
 };
 
