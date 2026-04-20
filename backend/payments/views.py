@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from bookings.models import Booking
+from messaging.models import Message
 from .models import EscrowEntry, Payment, WalletTransaction
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -320,6 +321,15 @@ def pay_booking(request):
         booking.status = 'paid'
         booking.save(update_fields=['status'])
 
+        Message.objects.create(
+            sender=buyer,
+            receiver=provider,
+            body=(
+                f"Hi! I've just paid for your service \"{booking.service.title}\". "
+                f"${float(net):.2f} is now held in escrow and will be released to you once the work is completed."
+            ),
+        )
+
     return Response({'status': 'paid', 'new_balance': float(buyer.wallet_balance)})
 
 
@@ -371,6 +381,15 @@ def release_escrow(request):
 
         booking.status = 'completed'
         booking.save(update_fields=['status'])
+
+        Message.objects.create(
+            sender=booking.requester,
+            receiver=provider,
+            body=(
+                f"Payment of ${float(escrow.amount):.2f} for \"{svc_title}\" has been released to your wallet. "
+                f"Thanks for your work!"
+            ),
+        )
 
     return Response({'status': 'completed'})
 

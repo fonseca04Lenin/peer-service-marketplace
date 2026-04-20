@@ -72,6 +72,7 @@ def booking_list_create(request):
         requester=request.user,
         scheduled_at=ser.validated_data['scheduled_at'],
         notes=ser.validated_data.get('notes', ''),
+        address=ser.validated_data.get('address', ''),
         status='pending',
     )
     booking = _booking_qs().get(pk=booking.pk)

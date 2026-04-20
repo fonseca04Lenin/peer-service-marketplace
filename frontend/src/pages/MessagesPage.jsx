@@ -41,7 +41,7 @@ function Avatar({ user, size = 36 }) {
   );
 }
 
-function MessagesPage() {
+function MessagesPage({ openUserId, onConvoOpened }) {
   const currentUser = useAuth();
   const [conversations,  setConversations]  = useState([]);
   const [loadingConvos,  setLoadingConvos]  = useState(true);
@@ -78,6 +78,13 @@ function MessagesPage() {
     if (!currentUser) return;
     loadConversations();
   }, [currentUser, loadConversations]);
+
+  useEffect(() => {
+    if (!openUserId) return;
+    openConversation(openUserId);
+    onConvoOpened?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openUserId]);
 
   useEffect(() => {
     if (!currentUser) return;

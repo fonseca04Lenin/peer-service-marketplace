@@ -14,7 +14,7 @@ const STATUS_STYLE = {
   cancelled:   { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca", label: "Cancelled" },
 };
 
-function BookingsPage({ onPay, walletBalance }) {
+function BookingsPage({ onPay, walletBalance, onNavigate }) {
   const currentUser = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,9 @@ function BookingsPage({ onPay, walletBalance }) {
   const [actionId, setActionId] = useState(null);
   const [actionError, setActionError] = useState({});
   const [hoursMap, setHoursMap] = useState({});
+  const [confirmMsgId, setConfirmMsgId] = useState(null);
+  const [confirmMsgText, setConfirmMsgText] = useState("");
+  const [confirmMsgSending, setConfirmMsgSending] = useState(false);
 
   const load = useCallback(() => {
     if (!currentUser) {
@@ -228,6 +231,12 @@ function BookingsPage({ onPay, walletBalance }) {
                   <span style={s.whenVal}>{formatWhen(b.scheduled_at)}</span>
                 </div>
 
+                {b.address && b.viewer_role === "provider" && (
+                  <p style={s.notes}>
+                    <strong>Service address:</strong> {b.address}
+                  </p>
+                )}
+
                 {b.notes && (
                   <p style={s.notes}>
                     <strong>Notes:</strong> {b.notes}
@@ -244,9 +253,69 @@ function BookingsPage({ onPay, walletBalance }) {
                     <button type="button" style={s.btnDecline} disabled={busy} onClick={() => patchStatus(b.id, "cancelled")}>
                       Decline
                     </button>
-                    <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "confirmed")}>
+                    <button
+                      type="button"
+                      style={s.btnConfirm}
+                      disabled={busy}
+                      onClick={() => { setConfirmMsgId(b.id); setConfirmMsgText(""); }}
+                    >
                       {busy ? "…" : "Confirm"}
                     </button>
+                  </div>
+                )}
+
+                {/* Inline message box shown after provider clicks Confirm */}
+                {confirmMsgId === b.id && (
+                  <div style={s.msgBox}>
+                    <p style={s.msgPrompt}>Send a message to {`${req.first_name || req.username || "the client"}`} to confirm:</p>
+                    <textarea
+                      style={s.msgTextarea}
+                      rows={3}
+                      placeholder="e.g. Hi! I've confirmed your booking. Looking forward to working with you."
+                      value={confirmMsgText}
+                      onChange={(e) => setConfirmMsgText(e.target.value)}
+                    />
+                    <div style={{ ...s.actions, marginTop: "8px" }}>
+                      <button
+                        type="button"
+                        style={s.btnDecline}
+                        disabled={confirmMsgSending}
+                        onClick={() => setConfirmMsgId(null)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        style={s.btnConfirm}
+                        disabled={confirmMsgSending || !confirmMsgText.trim()}
+                        onClick={async () => {
+                          setConfirmMsgSending(true);
+                          try {
+                            const res = await apiFetch(`/messaging/${req.id}/`, {
+                              method: "POST",
+                              body: JSON.stringify({ body: confirmMsgText.trim() }),
+                            });
+                            if (!res.ok) throw new Error();
+                          } catch (_) {
+                            setActionError(prev => ({ ...prev, [b.id]: "Message failed to send. Try again." }));
+                            setConfirmMsgSending(false);
+                            return;
+                          }
+                          await patchStatus(b.id, "confirmed");
+                          setConfirmMsgId(null);
+                          setConfirmMsgSending(false);
+                          onNavigate?.("Messages", req.id);
+                        }}
+                      >
+                        {confirmMsgSending ? "…" : "Send & Confirm"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!listingDeleted && b.viewer_role === "provider" && b.status === "confirmed" && (
+                  <div style={s.actions}>
+                    <p style={s.deliveredNote}>Waiting for client to pay before you can start.</p>
                   </div>
                 )}
 
@@ -263,6 +332,12 @@ function BookingsPage({ onPay, walletBalance }) {
                     <button type="button" style={s.btnConfirm} disabled={busy} onClick={() => patchStatus(b.id, "delivered")}>
                       {busy ? "…" : "Mark as delivered"}
                     </button>
+                  </div>
+                )}
+
+                {!listingDeleted && b.viewer_role === "provider" && b.status === "delivered" && (
+                  <div style={s.actions}>
+                    <p style={s.deliveredNote}>Waiting for client to release payment.</p>
                   </div>
                 )}
 
@@ -527,6 +602,30 @@ const s = {
     color: "#dc2626",
     margin: "4px 0 8px",
     textAlign: "right",
+  },
+  msgBox: {
+    marginTop: "14px",
+    padding: "14px",
+    background: "#faf9ff",
+    borderRadius: "4px",
+    border: `1px solid #ddd6fe`,
+  },
+  msgPrompt: {
+    fontSize: "12px",
+    fontWeight: "600",
+    color: colors.dark,
+    margin: "0 0 8px",
+  },
+  msgTextarea: {
+    width: "100%",
+    padding: "8px 10px",
+    fontSize: "13px",
+    fontFamily: "'Poppins', sans-serif",
+    border: `1px solid ${colors.border}`,
+    borderRadius: "4px",
+    resize: "vertical",
+    boxSizing: "border-box",
+    outline: "none",
   },
   deliveredNote: {
     fontSize: "12px",

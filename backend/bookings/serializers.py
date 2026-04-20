@@ -49,7 +49,7 @@ class BookingSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             'id', 'service', 'requester', 'viewer_role',
-            'scheduled_at', 'status', 'notes', 'created_at',
+            'scheduled_at', 'status', 'notes', 'address', 'created_at',
         ]
 
     def get_viewer_role(self, obj):
@@ -68,6 +68,7 @@ class BookingCreateSerializer(serializers.Serializer):
     service = serializers.PrimaryKeyRelatedField(queryset=Service.objects.filter(is_active=True))
     scheduled_at = serializers.DateTimeField()
     notes = serializers.CharField(required=False, allow_blank=True, default='')
+    address = serializers.CharField(required=False, allow_blank=True, default='', max_length=300)
 
     def validate_scheduled_at(self, value):
         if value <= timezone.now():
