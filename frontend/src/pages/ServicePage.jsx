@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiFetch, getToken } from "../api";
 import { colors, CATEGORY_LABELS } from "../constants";
+import AddressAutocomplete from "../components/AddressAutocomplete";
 
 function defaultLocalDatetime() {
   const d = new Date();
@@ -16,6 +17,7 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [when, setWhen] = useState(defaultLocalDatetime);
   const [notes, setNotes] = useState("");
+  const [address, setAddress] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -79,6 +81,10 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
       setFormError("Pick a future date and time.");
       return;
     }
+    if (!service.is_remote && !address.trim()) {
+      setFormError("Please enter the service address.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await apiFetch("/bookings/", {
@@ -87,6 +93,7 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
           service: service.id,
           scheduled_at: scheduled.toISOString(),
           notes: notes.trim(),
+          address: address.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -273,6 +280,20 @@ function ServicePage({ id, onBack, currentUser, onBooked }) {
                     style={s.input}
                     required
                   />
+                  {!service.is_remote && (
+                    <>
+                      <label style={s.fieldLabel} htmlFor="address">
+                        Service address <span style={{ fontSize: "11px", color: "#ef4444" }}>*</span>
+                      </label>
+                      <AddressAutocomplete
+                        value={address}
+                        onChange={(val) => setAddress(val.slice(0, 300))}
+                        inputStyle={s.input}
+                        placeholder="e.g. 123 Main St, Omaha, NE 68102"
+                        required
+                      />
+                    </>
+                  )}
                   <label style={s.fieldLabel} htmlFor="notes">
                     Notes for the provider <span style={s.optional}>(optional)</span>
                   </label>

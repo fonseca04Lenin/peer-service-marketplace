@@ -230,6 +230,12 @@ function BookingsPage({ onPay, onNavigate }) {
                   <span style={s.whenVal}>{formatWhen(b.scheduled_at)}</span>
                 </div>
 
+                {b.address && b.viewer_role === "provider" && (
+                  <p style={s.notes}>
+                    <strong>Service address:</strong> {b.address}
+                  </p>
+                )}
+
                 {b.notes && (
                   <p style={s.notes}>
                     <strong>Notes:</strong> {b.notes}
