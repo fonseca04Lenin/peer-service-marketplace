@@ -4,7 +4,6 @@ from django.db import migrations
 OMAHA_LAT = 41.2565
 OMAHA_LNG = -95.9345
 
-# 4 seed providers — each gets their own profile picture (shown on search cards)
 SEED_PROVIDERS = [
     {
         "username": "omaha_provider_1",
@@ -211,5 +210,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(seed_omaha_services, reverse_code=unseed_omaha_services),
+        migrations.RunPython(migrations.RunPython.noop, reverse_code=migrations.RunPython.noop),
     ]
