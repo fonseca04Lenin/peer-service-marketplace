@@ -368,8 +368,9 @@ function BookingsPage({ onPay, walletBalance, onNavigate }) {
                     {onPay && b.status === "confirmed" && (() => {
                       const isHourly = svc.rate_type !== "flat";
                       const hours = hoursMap[b.id] ?? 1;
-                      const total = isHourly ? svc.price * hours : svc.price;
-                      const balance = walletBalance ?? 0;
+                      const price = parseFloat(svc.price) || 0;
+                      const total = isHourly ? price * hours : price;
+                      const balance = parseFloat(walletBalance) || 0;
                       const canAfford = balance >= total;
                       return (
                         <div style={s.payGroup}>
