@@ -161,15 +161,15 @@ class MarketplaceTests(unittest.TestCase):
             u = self.shared_user
             self._login(u["username"], u["password"])
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Explore')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Explore')]").click()
         time.sleep(0.8)
         self.assertIn("Search Services", d.find_element(By.TAG_NAME, "body").text)
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Bookings')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Bookings')]").click()
         time.sleep(0.8)
         self.assertIn("Bookings", d.find_element(By.TAG_NAME, "body").text)
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Dashboard')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Dashboard')]").click()
         time.sleep(0.8)
         self.assertIn("Dashboard", d.find_element(By.TAG_NAME, "body").text)
 
@@ -179,7 +179,7 @@ class MarketplaceTests(unittest.TestCase):
         if "Sign in" in body or "Get started" in body:
             self._login(self.shared_user["username"], self.shared_user["password"])
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Explore')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Explore')]").click()
         time.sleep(1)
 
         search_input = d.find_element(By.XPATH, "//input[@placeholder='Search services...']")
@@ -199,7 +199,7 @@ class MarketplaceTests(unittest.TestCase):
         if "Sign in" in body or "Get started" in body:
             self._login(self.shared_user["username"], self.shared_user["password"])
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Messages')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Messages')]").click()
         time.sleep(1)
 
         body = d.find_element(By.TAG_NAME, "body").text
@@ -259,7 +259,7 @@ class MarketplaceTests(unittest.TestCase):
         if "Sign in" in body or "Get started" in body:
             self._login(self.shared_user["username"], self.shared_user["password"])
 
-        d.find_element(By.XPATH, "//button[contains(text(), 'Bookings')]").click()
+        d.find_element(By.XPATH, "//button[contains(., 'Bookings')]").click()
         time.sleep(1)
 
         body = d.find_element(By.TAG_NAME, "body").text
