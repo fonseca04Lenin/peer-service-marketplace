@@ -283,7 +283,7 @@ function MessagesPage({ openUserId, onConvoOpened }) {
               <div style={s.safetyBanner}>
                 <span style={s.safetyIcon}>⚠</span>
                 <p style={s.safetyText}>
-                  <strong>Stay safe.</strong> You may be talking to someone you&apos;ve never , you might get touch-met never share passwords, home addresses, or banking details in chat. Keep all payments and agreements on the platform. If anything feels off, trust your gut and stop responding.
+                  <strong>Stay safe.</strong> You may be talking to someone you&apos;ve never met! Never share passwords, home addresses, or banking details in chat. Keep all payments and agreements on the platform. If anything feels off, trust your gut and stop responding.
                 </p>
                 <button style={s.safetyBtn} onClick={() => setSafetyDismissed(true)}>
                   Got it
