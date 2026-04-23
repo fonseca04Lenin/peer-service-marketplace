@@ -265,9 +265,89 @@ class MarketplaceTests(unittest.TestCase):
         body = d.find_element(By.TAG_NAME, "body").text
         self.assertIn("Bookings", body)
 
-    def test_10_user_can_sign_out(self):
+    def test_10_provider_creates_service_listing(self):
+        d = self.driver
+        IMAGE_DIR = "/Users/leninfonseca/peer-service-marketplace/backend/media"
+
+        body = d.find_element(By.TAG_NAME, "body").text
+        if "Sign in" in body or "Get started" in body:
+            self._login(self.shared_user["username"], self.shared_user["password"])
+            time.sleep(1)
+
+        d.find_element(By.XPATH, "//button[contains(text(), '+ Offer a service')]").click()
+        time.sleep(1)
+
+        photo_input = d.find_element(By.XPATH, "//input[@type='file' and @accept='image/*']")
+        d.execute_script("arguments[0].style.display = 'block';", photo_input)
+        photo_input.send_keys(f"{IMAGE_DIR}/profile_pictures/picture1.png")
+        time.sleep(0.6)
+
+        tagline = d.find_element(By.XPATH, "//input[@placeholder='e.g. Full-stack dev open to freelance work']")
+        tagline.send_keys("Expert Python developer available for freelance")
+        time.sleep(0.3)
+
+        d.find_element(By.XPATH, "//button[contains(text(), 'Continue')]").click()
+        time.sleep(0.8)
+
+        bio = d.find_element(By.XPATH, "//textarea[contains(@placeholder, 'Tell people who you are')]")
+        bio.send_keys("I am a software developer with 5 years of experience building web apps and APIs.")
+        time.sleep(0.3)
+
+        d.find_element(By.XPATH, "//button[contains(text(), 'Continue')]").click()
+        time.sleep(0.8)
+
+        skill_input = d.find_element(By.XPATH, "//input[contains(@placeholder, 'skill')]")
+        skill_input.send_keys("Python")
+        skill_input.send_keys(Keys.RETURN)
+        time.sleep(0.3)
+        skill_input.send_keys("Django")
+        skill_input.send_keys(Keys.RETURN)
+        time.sleep(0.3)
+
+        d.find_element(By.XPATH, "//button[contains(text(), 'Continue')]").click()
+        time.sleep(0.8)
+
+        title = d.find_element(By.XPATH, "//input[contains(@placeholder, 'Algebra')]")
+        title.send_keys("Python Tutoring for Beginners")
+        time.sleep(0.3)
+
+        select = Select(d.find_element(By.XPATH, "//select"))
+        select.select_by_visible_text("Education")
+        time.sleep(0.3)
+
+        price = d.find_element(By.XPATH, "//input[@type='number' and @placeholder='0']")
+        price.clear()
+        price.send_keys("45")
+        time.sleep(0.3)
+
+        desc = d.find_element(By.XPATH, "//textarea[contains(@placeholder, 'Describe what you offer')]")
+        desc.send_keys("One-on-one Python lessons covering basics to intermediate. Great for beginners.")
+        time.sleep(0.3)
+
+        d.find_element(By.XPATH, "//button[text()='Remote']").click()
+        time.sleep(0.4)
+
+        svc_img_input = d.find_element(By.XPATH, "//input[@type='file' and @accept='image/*']")
+        d.execute_script("arguments[0].style.display = 'block';", svc_img_input)
+        svc_img_input.send_keys(f"{IMAGE_DIR}/service_images/picture1.png")
+        time.sleep(0.6)
+
+        d.find_element(By.XPATH, "//button[contains(text(), 'Finish setup')]").click()
+        time.sleep(3)
+
+        body = d.find_element(By.TAG_NAME, "body").text
+        self.assertTrue(
+            "You're all set" in body or "Go to your dashboard" in body,
+            f"Expected success screen after creating listing. Got: {body[:300]}"
+        )
+
+    def test_11_user_can_sign_out(self):
         d = self.driver
         body = d.find_element(By.TAG_NAME, "body").text
+        if "Go to your dashboard" in body:
+            d.find_element(By.XPATH, "//button[contains(text(), 'Go to your dashboard')]").click()
+            time.sleep(1.5)
+
         if "Sign in" in body or "Get started" in body:
             self._login(self.shared_user["username"], self.shared_user["password"])
             time.sleep(1)
